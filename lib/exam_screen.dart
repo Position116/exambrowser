@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show MethodChannel, MissingPluginException, PlatformException, SystemChrome, SystemUiMode;
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// Channel kiosk mode Android (implementasi di MainActivity.kt).
 const MethodChannel _kioskChannel = MethodChannel('exam_brow/kiosk');
+
+/// PIN pengawas untuk keluar mode ujian (tetap, tidak diatur dari UI).
+const String kSupervisorPin = '123456';
 
 /// window_manager hanya ada di desktop; panggilan di Android/iOS
 /// akan melempar MissingPluginException (harus di-guard).
@@ -129,8 +131,6 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener {
 
   /// Minta PIN pengawas sebelum keluar dari mode ujian.
   Future<bool> _askPin() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedPin = prefs.getString('pin') ?? '123456';
     if (!mounted) return false;
     final pinController = TextEditingController();
 
@@ -155,7 +155,7 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener {
           ),
           FilledButton(
             onPressed: () {
-              final ok = pinController.text.trim() == savedPin;
+              final ok = pinController.text.trim() == kSupervisorPin;
               Navigator.of(dialogContext).pop(ok);
             },
             child: const Text('Konfirmasi'),

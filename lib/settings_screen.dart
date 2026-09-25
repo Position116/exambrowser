@@ -12,7 +12,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _urlController = TextEditingController();
-  final _pinController = TextEditingController();
   bool _loading = true;
 
   @override
@@ -24,14 +23,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _urlController.dispose();
-    _pinController.dispose();
     super.dispose();
   }
 
   Future<void> _loadSaved() async {
     final prefs = await SharedPreferences.getInstance();
     _urlController.text = prefs.getString('server_url') ?? '';
-    _pinController.text = prefs.getString('pin') ?? '123456';
     if (mounted) setState(() => _loading = false);
   }
 
@@ -50,15 +47,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
-    final pin = _pinController.text.trim();
-    if (pin.length < 4) {
-      _showError('PIN minimal 4 karakter.');
-      return;
-    }
-
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('server_url', url);
-    await prefs.setString('pin', pin);
 
     if (!mounted) return;
     Navigator.of(context).push(
@@ -97,15 +87,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   decoration: const InputDecoration(
                     labelText: 'URL server ujian',
                     hintText: 'misal: ujian.sekolah.sch.id',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _pinController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'PIN pengawas (untuk keluar mode ujian)',
                     border: OutlineInputBorder(),
                   ),
                 ),

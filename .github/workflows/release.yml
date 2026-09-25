@@ -29,6 +29,14 @@ jobs:
         with:
           channel: stable
 
+      - name: Patch flutter_inappwebview_android for new AGP
+        # AGP baru menolak proguard-android.txt bawaan plugin
+        # (lihat work.md bagian 5 poin 5). Patch sama diterapkan di CI.
+        run: |
+          for d in "$HOME"/.pub-cache/hosted/pub.dev/flutter_inappwebview_android-*; do
+            sed -i 's/proguard-android.txt/proguard-android-optimize.txt/g' "$d/android/build.gradle"
+          done
+
       - name: Build APK (split per ABI)
         run: flutter build apk --release --split-per-abi
 
