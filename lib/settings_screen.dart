@@ -1,0 +1,131 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'exam_screen.dart';
+
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  final _urlController = TextEditingController();
+  final _pinController = TextEditingController();
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSaved();
+  }
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSaved() async {
+    final prefs = await SharedPreferences.getInstance();
+    _urlController.text = prefs.getString('server_url') ?? '';
+    _pinController.text = prefs.getString('pin') ?? '123456';
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _startExam() async {
+    var url = _urlController.text.trim();
+    if (url.isEmpty) {
+      _showError('URL server ujian belum diisi.');
+      return;
+    }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://$url';
+    }
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.host.isEmpty) {
+      _showError('URL tidak valid. Contoh: ujian.sekolah.sch.id');
+      return;
+    }
+
+    final pin = _pinController.text.trim();
+    if (pin.length < 4) {
+      _showError('PIN minimal 4 karakter.');
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('server_url', url);
+    await prefs.setString('pin', pin);
+
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ExamScreen(url: url)),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Exam Browser'),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: _urlController,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'URL server ujian',
+                    hintText: 'misal: ujian.sekolah.sch.id',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _pinController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'PIN pengawas (untuk keluar mode ujian)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: _startExam,
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Mulai Ujian'),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'CopyRight Ronald Aveiro',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
