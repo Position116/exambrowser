@@ -59,7 +59,7 @@ Future<UpdateCheckResult?> checkForUpdate() async {
       final map = asset as Map<String, dynamic>;
       final assetName = (map['name'] ?? '') as String;
       if (!assetName.endsWith('.apk')) continue;
-      if (assetName.contains('arm64-v8a')) {
+      if (assetName.contains('arm64')) {
         url = map['browser_download_url'] as String?;
         name = assetName;
         break;
