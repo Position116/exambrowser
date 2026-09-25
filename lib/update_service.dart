@@ -14,7 +14,7 @@ import 'package:path_provider/path_provider.dart';
 /// Selama repo belum ada / belum ada Release / perangkat offline,
 /// cek update gagal dan aplikasi tetap berjalan normal (fail-open).
 /// ============================================================
-const String kUpdateRepo = 'ronaldaveiro/exambrow';
+const String kUpdateRepo = 'Position116/exambrowser';
 
 class UpdateCheckResult {
   const UpdateCheckResult({
