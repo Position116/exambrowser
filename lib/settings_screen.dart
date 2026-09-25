@@ -97,10 +97,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   label: const Text('Mulai Ujian'),
                 ),
                 const SizedBox(height: 32),
-                Text(
-                  'CopyRight Ronald Aveiro',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.copyright,
+                      size: 14,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Ronald Aveiro',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
               ],
             ),

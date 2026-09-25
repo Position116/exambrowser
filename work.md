@@ -9,6 +9,7 @@
 2. Kalau bingung, JANGAN berasumsi — tanya user (pakai ask_user)
 3. Jangan buat perubahan random yang tidak penting
 4. Selalu double-check hasil kerja (baca ulang, jalankan analyze/test/build)
+5. Catat Semua Perubahan dan Berikan Solusi Editing Setiap File jika ada eror atau perubahan
 
 Komunikasi dalam **Bahasa Indonesia**.
 
@@ -26,7 +27,7 @@ Komunikasi dalam **Bahasa Indonesia**.
 | File | Isi |
 |---|---|
 | `lib/main.dart` | Entry point + window_manager setup (judul, min size 800x600) |
-| `lib/settings_screen.dart` | Form URL server + PIN (tersimpan via shared_preferences, keys: `server_url`, `pin`); header AppBar "Exam Browser" + footer "CopyRight Ronald Aveiro" |
+| `lib/settings_screen.dart` | Form URL server (tersimpan via shared_preferences, key: `server_url`); header "Exam Browser" + footer "CopyRight Ronald Aveiro"; TANPA input PIN |
 | `lib/exam_screen.dart` | Webview kiosk: whitelist host, PopScope blokir back, WindowListener blokir close Windows, dialog PIN keluar, tombol gembok kecil pojok kanan-bawah (opacity 0.35), inject JS blokir copy-paste/seleksi teks (`_blockClipboardJs` via `onLoadStop`), kiosk Android (lihat bagian 5 poin 10) |
 | `lib/update_service.dart` | Auto-update: cek GitHub Releases + layar update wajib (unduh APK + buka installer) |
 | `test/widget_test.dart` | Test halaman pengaturan (LULUS) |
@@ -46,7 +47,8 @@ Komunikasi dalam **Bahasa Indonesia**.
 
 (catatan: `cupertino_icons` sudah dihapus dari pubspec karena tidak terpakai)
 
-### PIN default: `123456` (user harus ganti di halaman pengaturan)
+### PIN keluar aplikasi: `123456` (TETAP — tidak bisa diubah dari UI; input PIN
+di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
 
 ## 3. Toolchain Terinstall (lokasi & versi PENTING)
 
@@ -69,7 +71,7 @@ Komunikasi dalam **Bahasa Indonesia**.
 |---|---|---|
 | `flutter analyze` | ✅ 0 issue | — |
 | `flutter test` | ✅ lulus | — |
-| **Windows release** | ✅ BERHASIL | `build\windows\x64\runner\Release\exam_brow.exe` |
+| **Windows release** | ✅ BERHASIL ulang 25 Sep 2026 malam (v0.1.3: footer logo © + tanpa PIN depan) | `build\windows\x64\runner\Release\exam_brow.exe` |
 | **Android APK release** | ✅ BERHASIL — fat 48.2 MB (3 ABI); **pakai versi split-per-abi**: arm64 17.9 MB (vivo 1918), armeabi-v7a 15.3 MB, x86_64 19.2 MB | `build\app\outputs\flutter-apk\app-<abi>-release.apk` |
 | iOS | ⛔ TIDAK BISA dari Windows (butuh Mac+Xcode) | folder `ios/` sudah ada & siap |
 
@@ -139,8 +141,58 @@ Komunikasi dalam **Bahasa Indonesia**.
       repo GitHub asli dari user. Panduan rilis lengkap di SETUP.md (naikkan
       version+versionCode di pubspec → build split-per-abi → upload APK ke Release
       dengan tag = versionName).
-    - Build verifikasi: fat 50.4 MB, arm64 18.6 MB, v7a 16.1 MB — analyze/test lulus.
-      BELUM diuji end-to-end di HP (butuh repo + release pertama).
+13. **Perubahan PIN + perbaikan CI** ✅ (25 Sep 2026):
+    - Input PIN di halaman depan DIHAPUS (user request); PIN keluar mode ujian
+      TETAP `123456` via `kSupervisorPin` di exam_screen.dart (tidak dari UI).
+    - CI release workflow: build pertama GAGAL (error proguard plugin — patch
+      pub cache tidak ada di CI), percobaan ke-2 GAGAL (patch jalan SEBELUM
+      pub get → folder plugin belum ada). Fix: step `flutter pub get` eksplisit
+      SEBELUM patch + pin `flutter-version: 3.47.5`. Run ke-3 SUKSES.
+    - Release v0.1.2 terbit otomatis via CI (assets: exambrow-v0.1.2-arm64-v8a.apk,
+      exambrow-v0.1.2-armeabi-v7a.apk). Repo: Position116/exambrowser (public).
+    - Alur rilis ke depan: bump version di pubspec.yaml → commit → tag vX.Y.Z →
+      push → CI build+release otomatis → HP lama update sendiri saat buka app.
+    - Uji E2E auto-update PENDING: HP putus dari adb saat mau install APK
+      dasar v0.1.1+2. Saat HP tersambung lagi: install arm64 v0.1.1 lokal →
+      buka app → harus muncul layar update ke v0.1.2 → install → verifikasi
+      dumpsys versionName=0.1.2.
+14. **APK harus uninstall dulu + footer copyright** ✅ diperbaiki (26 Sep 2026):
+    - Penyebab harus uninstall: release build memakai `debug` signing key.
+      Tiap run CI generate debug keystore baru → tanda tangan beda tiap rilis →
+      Android menolak timpa (`UPDATE_INCOMPATIBLE`) → harus uninstall dulu.
+    - Fix: keystore permanen `android/app/exambrow-release.jks` (alias `exambrow`,
+      validitas 30 thn, TIDAK di-commit — repo public!). Kredensial di
+      `android/key.properties` (gitignored). `android/app/build.gradle.kts`
+      pakai key permanen bila file ada, fallback debug bila tidak ada.
+      CI (release.yml) memulihkan keystore dari secret `ANDROID_KEYSTORE_BASE64`
+      + menulis key.properties dari secret `ANDROID_KEYSTORE_PASSWORD`,
+      `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`.
+    - ⚠️ WAJIB sebelum tag rilis berikutnya: isi 4 secret di
+      GitHub Settings > Secrets > Actions, kalau tidak CI GAGAL di step restore.
+      Nilai password ada di laptop (key.properties); base64: jalankan
+      `certutil -encode android\app\exambrow-release.jks %TEMP%\ks.b64`
+      lalu isi file itu sebagai secret (satu baris).
+    - ⚠️ Install lama (debug-signed: v0.1.0/v0.1.1/v0.1.2) TIDAK bisa ditimpa
+      APK key baru (tanda tangan beda = aturan Android, tidak bisa diakali) →
+      user WAJIB uninstall manual SATU KALI TERAKHIR ke v0.1.3. Setelah itu
+      semua update berikutnya (sama-sama key baru) bisa timpa langsung.
+    - Footer settings_screen.dart: teks `CopyRight Ronald Aveiro` → logo
+      `Icon(Icons.copyright)` + teks `Ronald Aveiro` (Row, center).
+    - Versi di-bump ke `0.1.3+4` (arm64 versionCode 2004, terverifikasi via
+      `aapt2 dump badging`). Status rilis v0.1.3: BELUM — tunggu secret diisi
+      lalu commit → tag v0.1.3 → push.
+15. **Windows masuk GitHub Release** ✅ workflow (26 Sep 2026, BELUM rilis):
+    - `release.yml`: job `release` → `android`, tambah job `windows`
+      (`windows-latest`): Flutter 3.47.5 + `pub get` + `choco install
+      nuget.commandline` (wajib plugin inappwebview) + `flutter build windows
+      --release` + zip isi folder Release → `exambrow-vX.Y.Z-windows-x64.zip`
+      → upload ke Release yang sama via softprops/action-gh-release.
+    - Alasan zip: exe saja tidak jalan (butuh `flutter_windows.dll`, plugin
+      dll, folder `data/`). User Windows: ekstrak zip → jalankan exe.
+    - Build Windows lokal v0.1.3 terverifikasi: exe + flutter_assets fresh.
+      Syarat build lokal: Developer Mode ON + nuget di PATH.
+    - Status: workflow BELUM di-push; ikut terbang saat commit+tag v0.1.3
+      (butuh 4 secret Android tetap diisi, kalau tidak job android gagal).
 
 ## 6. Command Cepat untuk Lanjut Kerja
 
@@ -162,6 +214,8 @@ flutter analyze && flutter test && flutter doctor
 
 Catatan bash Windows: argumen sdkmanager pakai `/` bukan `;` (mis. `platforms/android-36`),
 `;` terpotong oleh bash. Terminal user = Git Bash (win32).
+Build Windows butuh Developer Mode ON (untuk symlink plugin) + nuget di PATH:
+`start ms-settings:developers` → nyalakan → `flutter build windows --release`.
 
 ## 7. Yang Belum Dikerjakan / Kandidat Lanjutan
 
@@ -187,3 +241,60 @@ Catatan bash Windows: argumen sdkmanager pakai `/` bukan `;` (mis. `platforms/an
 - Windows 11 25H2, user: `Ronald Aveiro`, locale en-US
 - Tidak ada Android Studio / emulator; device Android diuji via APK manual
 - Drive D: untuk project & data, C: untuk toolchain
+
+## 9. Register Perubahan (sesi 26 Sep 2026, BELUM di-commit) + Solusi Edit per File
+
+Status: `M` = modified, `baru` = file baru. Cara cek: `git status --short`.
+
+| # | File | Status | Isi perubahan |
+|---|---|---|---|
+| 1 | `pubspec.yaml` | M | `version: 0.1.2+3` → `0.1.3+4` (versionName 0.1.3, versionCode 4; arm64 jadi 2004) |
+| 2 | `lib/settings_screen.dart` | M | Footer `Text('CopyRight Ronald Aveiro')` → `Row` center berisi `Icon(Icons.copyright)` + `Text('Ronald Aveiro')` |
+| 3 | `android/app/build.gradle.kts` | M | Signing release permanen dari `android/key.properties` (fallback debug key bila file tidak ada) |
+| 4 | `android/key.properties` | baru, gitignored | `storePassword / keyPassword / keyAlias=exambrow / storeFile=exambrow-release.jks` |
+| 5 | `android/app/exambrow-release.jks` | baru, gitignored | Keystore RSA 2048 permanen, validitas 30 thn — JANGAN hilang, JANGAN commit |
+| 6 | `.gitignore` | M | +3 baris: `android/key.properties`, `android/app/*.jks`, `android/app/*.keystore` |
+| 7 | `.github/workflows/release.yml` | M | Step "Restore release keystore" dari 4 secret (Android) + job `windows` baru: build Windows di `windows-latest`, zip → `exambrow-vX-windows-x64.zip`, upload ke Release yang sama |
+| 8 | `work.md` | M | Aturan user sesuai gambar + poin 14 + bagian ini |
+| 9 | `SETUP.md` | M | Sesuaikan repo `Position116/exambrowser`, alur rilis via CI, syarat 4 secret, catatan uninstall 1x |
+| — | `image.png` | untracked | Gambar aturan dari user, BUKAN bagian aplikasi (boleh hapus kapan saja) |
+
+### Solusi edit jika error / ada perubahan
+
+1. **`pubspec.yaml` — update tidak muncul di HP:** pastikan `versionName` DAN
+   `+versionCode` keduanya naik (mis. `0.1.3+4`). VersionCode yang tidak naik =
+   Android menganggapnya bukan update. Edit langsung angkanya, lalu
+   `flutter pub get`.
+2. **`settings_screen.dart` — footer tidak center / overflow:** `Row` harus pakai
+   `mainAxisAlignment: MainAxisAlignment.center`. Parent `Column` memakai
+   `crossAxisAlignment.stretch` sehingga Row otomatis selebar layar → jangan
+   bungkus dengan `Expanded`. Cek: `flutter analyze && flutter test`.
+3. **`build.gradle.kts` — `Unresolved reference 'util'`:** jangan tulis
+   `java.util.Properties()` di dalam blok `android {}`. Solusi: tambah
+   `import java.util.Properties` di atas file, deklarasikan `val keyPropsFile`
+   dan `val keyProps` di top-level (sebelum blok `android {}`).
+4. **`build.gradle.kts` — `Keystore file '.../app/app/exambrow-release.jks' not found`:**
+   `file()` di dalam blok `android {}` relatif terhadap folder `android/app`.
+   Solusi: isi `storeFile=exambrow-release.jks` (tanpa awalan `app/`) — di
+   `key.properties` lokal DAN di step CI `release.yml`.
+5. **`key.properties` hilang (clone baru / ganti laptop):** build tetap jalan
+   (fallback debug) tapi tanda tangan beda → JANGAN rilis dari mesin itu.
+   Solusi: copy `exambrow-release.jks` + `key.properties` dari laptop utama
+   (via USB, jangan via email/chat), atau generate ulang + isi ulang secret
+   (konsekuensi: user uninstall 1x lagi).
+6. **Keystore hilang/rusak TANPA backup:** tidak ada solusi edit — semua update
+   gagal timpa selamanya. Satu-satunya jalan: generate key baru + user uninstall
+   manual. Pencegahan: backup `.jks` di 2 tempat (laptop + flashdisk).
+7. **Keystore tidak sengaja ter-commit (repo public!):** key dianggap bocor.
+   Solusi: `git rm --cached android/app/*.jks`, commit, generate keystore BARU,
+   update secret, user uninstall 1x lagi.
+8. **CI gagal di step restore (`base64: invalid input` / secret kosong):**
+   4 secret belum diisi. Solusi: GitHub Settings > Secrets > Actions, isi
+   `ANDROID_KEYSTORE_BASE64` (satu baris! Windows: `certutil -encode` lalu
+   gabung barisnya), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`,
+   `ANDROID_KEY_ALIAS`. Lalu re-run job yang gagal (tidak perlu push baru).
+9. **Installer HP tetap minta uninstall setelah v0.1.3:** normal untuk 1x
+   transisi (debug → key baru). Solusi: uninstall manual 1x. Kalau MASIH minta
+   uninstall di update BERIKUTNYA (v0.1.4+), berarti CI menandatangani dengan
+   key berbeda → cek secret CI vs key lokal (bandingkan SHA-256:
+   `keytool -list -keystore android\app\exambrow-release.jks`).

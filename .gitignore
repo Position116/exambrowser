@@ -13,6 +13,9 @@ build/
 # Platform
 android/.gradle/
 android/local.properties
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
 ios/Pods/
 ios/Flutter/Flutter.framework
 windows/flutter/ephemeral/

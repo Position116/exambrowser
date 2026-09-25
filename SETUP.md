@@ -10,7 +10,7 @@ navigasi keluar, whitelist host server ujian).
 ExamBrow/
 ├── lib/
 │   ├── main.dart            # Entry point + gate spesifikasi + gate update
-│   ├── settings_screen.dart # Input URL server ujian & PIN pengawas
+│   ├── settings_screen.dart # Input URL server ujian (saja, tanpa PIN)
 │   ├── exam_screen.dart     # Webview kiosk + PIN keluar
 │   └── update_service.dart  # Cek/unduh update via GitHub Releases
 ├── test/widget_test.dart
@@ -93,29 +93,30 @@ Update bersifat **wajib**: layar update tidak bisa ditutup sampai versi baru ter
 
 Persiapan sekali saja:
 
-1. Buat repo GitHub, misal `ronaldaveiro/exambrow` (bisa private/public).
-2. Buka `lib/update_service.dart`, sesuaikan baris ini dengan repo kamu:
-   ```dart
-   const String kUpdateRepo = 'ronaldaveiro/exambrow';
-   ```
-3. Build ulang aplikasi.
+1. Repo GitHub: `Position116/exambrowser` (sesuai `kUpdateRepo` di
+   `lib/update_service.dart`). Kalau repo diganti, ubah baris itu + build ulang.
+2. Signing permanen (supaya update bisa menimpa langsung tanpa uninstall):
+   keystore ada di `android/app/exambrow-release.jks` + kredensial di
+   `android/key.properties` (keduanya TIDAK di-commit). Backup keduanya!
+3. Isi 4 secret di GitHub repo → Settings > Secrets > Actions (wajib,
+   kalau tidak build CI gagal):
+   `ANDROID_KEYSTORE_BASE64` (isi base64 SATU BARIS dari file `.jks`),
+   `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`.
 
-Alur setiap rilis versi baru:
+Alur setiap rilis versi baru (otomatis via CI):
 
 1. Naikkan versi di `pubspec.yaml`, contoh:
    ```yaml
-   version: 1.0.1+2   # versionName+versionCode — keduanya harus naik
+   version: 0.1.3+4   # versionName+versionCode — keduanya harus naik
    ```
-2. Build APK:
+2. Commit, buat tag, push:
    ```
-   flutter build apk --release --split-per-abi
+   git commit -am "Rilis 0.1.3"
+   git tag v0.1.3
+   git push origin main --tags
    ```
-3. Di GitHub repo → **Releases → Draft a new release**:
-   - Tag: `v1.0.1` (harus sama dengan `versionName` di pubspec, boleh diawali `v`)
-   - Judul bebas, mis. "Exam Browser 1.0.1"
-   - Upload **`app-arm64-v8a-release.apk`** (dan `app-armeabi-v7a-release.apk` bila
-     ada HP lama yang dipakai)
-   - Publish release.
+3. GitHub Actions otomatis build APK split-per-abi + menerbitkan Release
+   (`exambrow-v0.1.3-arm64-v8a.apk` dsb).
 4. Selesai — HP yang membuka aplikasi akan diminta update otomatis.
 
 Catatan:
@@ -123,6 +124,9 @@ Catatan:
   60 permintaan/jam), aplikasi **tetap bisa dipakai** — update dilewati.
 - Saat dialog installer muncul, Android bisa meminta izin "Install aplikasi
   tidak dikenal" untuk ExamBrow sekali saja — centang izinkan.
+- PENTING: install lama yang ditandatangani debug key (v0.1.0–v0.1.2) wajib
+  di-uninstall manual SATU KALI saat pindah ke versi keystore baru (v0.1.3+).
+  Setelah itu update berikutnya bisa menimpa langsung.
 
 ## Catatan Penting
 
@@ -131,7 +135,8 @@ Catatan:
   siswa yang paham komputer masih bisa dengan task manager dsb. Untuk ujian
   resmi berskala besar, pertimbangkan tambahan kebijakan Windows
   (Assigned Access) atau pembatasan akun siswa.
-- **PIN default** adalah `123456` — segera ganti di halaman pengaturan.
+- **PIN keluar mode ujian** TETAP `123456` (ditentukan di `exam_screen.dart`,
+  tidak bisa diubah dari aplikasi).
 - **Whitelist URL**: webview hanya mengizinkan navigasi ke host server ujian
   yang diisi di halaman pengaturan.
 - iOS/iPhone: fullscreen "benar-benar kiosk" di iOS dibatasi oleh Apple

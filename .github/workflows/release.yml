@@ -1,6 +1,7 @@
 # Otomatis rilis: setiap kali tag v* di-push, GitHub Actions build APK
-# dan publish GitHub Release. Aplikasi yang sudah terinstall akan
-# menemukan update lewat checkForUpdate() di lib/update_service.dart.
+# Android + aplikasi Windows dan publish keduanya ke GitHub Release.
+# Aplikasi Android yang sudah terinstall akan menemukan update
+# lewat checkForUpdate() di lib/update_service.dart.
 name: Build & Publish Release
 
 on:
@@ -12,7 +13,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  android:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -44,6 +45,25 @@ jobs:
             echo "patched: $d"
           done
 
+      - name: Restore release keystore (agar update bisa timpa langsung)
+        # Keystore TIDAK di-commit (repo public). CI memulihkannya dari secret.
+        # Secret yang wajib diisi di Settings > Secrets > Actions:
+        #   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+        #   ANDROID_KEY_PASSWORD, ANDROID_KEY_ALIAS
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/exambrow-release.jks
+          {
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "storeFile=exambrow-release.jks"
+          } > android/key.properties
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+
       - name: Build APK (split per ABI)
         run: flutter build apk --release --split-per-abi
 
@@ -62,3 +82,37 @@ jobs:
             exambrow-v*-arm64-v8a.apk
             exambrow-v*-armeabi-v7a.apk
           generate_release_notes: true
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.5
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Install nuget (wajib untuk plugin inappwebview Windows)
+        run: choco install nuget.commandline -y
+
+      - name: Build Windows release
+        # windows/CMakeLists.txt sudah ada fix coroutine (lihat work.md).
+        run: flutter build windows --release
+
+      - name: Zip hasil build (exe saja tidak cukup — butuh dll + data)
+        shell: pwsh
+        run: |
+          $VERSION = "${{ github.ref_name }}".TrimStart("v")
+          Compress-Archive -Path build\windows\x64\runner\Release\* `
+            -DestinationPath "exambrow-v$VERSION-windows-x64.zip"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: exambrow-v*-windows-x64.zip

@@ -4,6 +4,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+
+// Signing release permanen: semua build (lokal & CI) memakai keystore
+// yang sama supaya update APK bisa menimpa langsung tanpa uninstall.
+// Kredensial di android/key.properties (JANGAN commit file itu).
+// Kalau file tidak ada (mis. clone baru), fallback ke debug key.
+val keyPropsFile = rootProject.file("key.properties")
+val keyProps = Properties()
+if (keyPropsFile.exists()) keyProps.load(keyPropsFile.inputStream())
+
 android {
     namespace = "com.example.exam_brow"
     compileSdk = flutter.compileSdkVersion
@@ -33,9 +43,17 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Pakai key permanen bila key.properties ada, kalau tidak pakai debug key.
+            signingConfig = if (keyPropsFile.exists()) {
+                signingConfigs.create("exambrowRelease") {
+                    storeFile = file(keyProps.getProperty("storeFile") ?: "exambrow-release.jks")
+                    storePassword = keyProps.getProperty("storePassword")
+                    keyAlias = keyProps.getProperty("keyAlias") ?: "exambrow"
+                    keyPassword = keyProps.getProperty("keyPassword")
+                }
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
