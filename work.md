@@ -465,3 +465,74 @@ coba lagi flashdisk/port lain; alternatif: upload cloud langsung.
 - Ganti laptop / clone baru: copy dari backup, JANGAN generate key baru.
 - Cek ulang salinan tiap ±6 bulan (flashdisk bisa rusak; format exFAT agar
   terbaca di Windows & Mac).
+
+## 11. Panduan EDIT OFFLINE (tanpa internet)
+
+> Dibuat 28 Sep 2026 sesuai permintaan user. Semua toolchain sudah LOKAL
+> (Flutter C:\src\flutter, JDK, Android SDK, nuget) + cache pub/gradle/nuget
+> terisi dari build-build sebelumnya → edit + build offline JALAN.
+> Yang butuh internet HANYA: tambah dependency baru, push/rilis ke GitHub.
+
+### 11.1 Peta file yang biasa diedit
+| Mau mengubah apa? | File | Bagian |
+|---|---|---|
+| PIN keluar pengawas | `lib/exam_screen.dart` | konstanta `kSupervisorPin` (baris atas) |
+| Header "Exam Browser" | `lib/settings_screen.dart` | `AppBar(title: ...)` |
+| Footer "© Ronald Aveiro" | `lib/settings_screen.dart` | `Row` di bawah tombol |
+| Teks/warna bar status | `lib/device_status_bar.dart` | `_resolveNetwork()` + `build()` |
+| Aturan whitelist host | `lib/exam_screen.dart` | `shouldOverrideUrlLoading` |
+| Blokir copy-paste (JS) | `lib/exam_screen.dart` | `_blockClipboardJs` |
+| Ambang RAM 3584 MB | `lib/main.dart` | `DeviceGate` / `_BlockedSpecScreen` |
+| Repo auto-update | `lib/update_service.dart` | `kUpdateRepo` |
+| Versi aplikasi | `pubspec.yaml` | `version: X.Y.Z+N` (N WAJIB naik tiap rilis) |
+| Nama app Android | `android/app/src/main/AndroidManifest.xml` | `android:label` |
+| Icon app | `assets/icon/*.png` → `dart run flutter_launcher_icons` |
+
+### 11.2 Alur edit offline (WAJIB urut)
+```bash
+export PATH="/c/src/flutter/bin:/c/tools/nuget:$PATH"
+cd "/d/Project Web/ExamBrow"
+
+# 1. Buka & edit file (editor bebas: VS Code/IntelliJ/Notepad++)
+
+# 2. Cek sehat (offline OK):
+flutter analyze          # harus 0 issue
+flutter test             # harus lulus
+
+# 3. Uji di Windows (offline OK):
+taskkill //IM exam_brow.exe //F   # WAJIB — app jalan = file terkunci (lihat §5 poin 16)
+flutter build windows --release
+cd build/windows/x64/runner/Release && cmd //c start "" exam_brow.exe
+
+# 4. Build APK (offline OK, cache gradle sudah ada):
+cd "/d/Project Web/ExamBrow"
+flutter build apk --release --split-per-abi
+# hasil: build\app\outputs\flutter-apk\app-arm64-v8a-release.apk
+```
+
+### 11.3 Install APK ke HP tanpa internet
+1. Copy `app-arm64-v8a-release.apk` ke HP (kabel USB / share lokal apa pun)
+2. Di HP: buka file APK → izinkan "install aplikasi tidak dikenal" bila diminta
+3. Syarat BISA timpa langsung: `version:` di pubspec sudah NAIK, dan APK
+   ditandatangani keystore permanen (build dari laptop ini dengan
+   `android/key.properties` ada — lihat §9 poin 5)
+4. Verifikasi versi: Settings HP → Apps → ExamBrow
+
+### 11.4 Yang TIDAK BISA dilakukan offline (butuh internet)
+- `flutter pub add ...` / ganti dependency di pubspec (pub get butuh jaringan;
+  dependency yang SUDAH ada tetap aman karena ada cache)
+- Push commit/tag ke GitHub → CI build → HP lain auto-update
+- Update service di app: offline = cek update gagal = app jalan normal
+  (fail-open, by design)
+
+### 11.5 Saat kembali online (setelah edit offline)
+```bash
+cd "/d/Project Web/ExamBrow"
+git add -A && git status --short        # cek dulu apa yang berubah
+git commit -m "deskripsi perubahan"
+git push origin main
+# Untuk rilis ke semua HP: naikkan version di pubspec DULU sebelum commit, lalu:
+git tag vX.Y.Z && git push origin vX.Y.Z   # CI build + rilis otomatis
+```
+Jangan lupa: kalau dependency baru ditambah saat offline akan gagal —
+tunda sampai online.
