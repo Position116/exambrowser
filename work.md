@@ -65,7 +65,7 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
 
 ### flutter doctor (terakhir): semua [√] kecuali tidak ada Android Studio/emulator (tidak masalah, build CLI jalan)
 
-## 4. Status Build (per 25 Sep 2026)
+## 4. Status Build (per 28 Sep 2026)
 
 | Target | Status | Output |
 |---|---|---|
@@ -74,6 +74,7 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
 | **Windows release** | ✅ BERHASIL ulang 25 Sep 2026 malam (v0.1.3: footer logo © + tanpa PIN depan) | `build\windows\x64\runner\Release\exam_brow.exe` |
 | **Android APK release** | ✅ BERHASIL — fat 48.2 MB (3 ABI); **pakai versi split-per-abi**: arm64 17.9 MB (vivo 1918), armeabi-v7a 15.3 MB, x86_64 19.2 MB | `build\app\outputs\flutter-apk\app-<abi>-release.apk` |
 | iOS | ⛔ TIDAK BISA dari Windows (butuh Mac+Xcode) | folder `ios/` sudah ada & siap |
+| **Release GitHub v0.1.3** | ✅ TERBIT lengkap 28 Sep 2026 | arm64 19,4 MB + v7a 16,8 MB + win zip 12,4 MB; signature APK = keystore permanen (SHA-256 match, terverifikasi apksigner) |
 
 ## 5. Masalah yang Sudah Dipecahkan (jangan diulang/error sama)
 
@@ -152,10 +153,11 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
       exambrow-v0.1.2-armeabi-v7a.apk). Repo: Position116/exambrowser (public).
     - Alur rilis ke depan: bump version di pubspec.yaml → commit → tag vX.Y.Z →
       push → CI build+release otomatis → HP lama update sendiri saat buka app.
-    - Uji E2E auto-update PENDING: HP putus dari adb saat mau install APK
-      dasar v0.1.1+2. Saat HP tersambung lagi: install arm64 v0.1.1 lokal →
-      buka app → harus muncul layar update ke v0.1.2 → install → verifikasi
-      dumpsys versionName=0.1.2.
+    - Uji E2E auto-update: DILAKUKAN dgn jalur berbeda (28 Sep 2026): app lama
+      v0.1.2 di HP mendeteksi v0.1.3, unduh APK OK, installer terbuka; install
+      DITOLAK Android (UPDATE_INCOMPATIBLE — transisi debug→key permanen,
+      lihat poin 15). Mekanisme deteksi+unduh+buka-installer TERBUKTI jalan;
+      uji timpa-langsung (tanpa uninstall) bermakna mulai v0.1.4.
 14. **APK harus uninstall dulu + footer copyright** ✅ diperbaiki (26 Sep 2026):
     - Penyebab harus uninstall: release build memakai `debug` signing key.
       Tiap run CI generate debug keystore baru → tanda tangan beda tiap rilis →
@@ -167,8 +169,9 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
       CI (release.yml) memulihkan keystore dari secret `ANDROID_KEYSTORE_BASE64`
       + menulis key.properties dari secret `ANDROID_KEYSTORE_PASSWORD`,
       `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`.
-    - ⚠️ WAJIB sebelum tag rilis berikutnya: isi 4 secret di
-      GitHub Settings > Secrets > Actions, kalau tidak CI GAGAL di step restore.
+    - ✅ 4 secret GitHub SUDAH DIISI (28 Sep 2026, manual via browser:
+      ANDROID_KEYSTORE_BASE64 satu baris via clip.exe + 3 kredensial dari
+      key.properties) → CI v0.1.3 re-run SUKSES (detail di poin 15).
       Nilai password ada di laptop (key.properties); base64: jalankan
       `certutil -encode android\app\exambrow-release.jks %TEMP%\ks.b64`
       lalu isi file itu sebagai secret (satu baris).
@@ -179,8 +182,8 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
     - Footer settings_screen.dart: teks `CopyRight Ronald Aveiro` → logo
       `Icon(Icons.copyright)` + teks `Ronald Aveiro` (Row, center).
     - Versi di-bump ke `0.1.3+4` (arm64 versionCode 2004, terverifikasi via
-      `aapt2 dump badging`). Status rilis v0.1.3: BELUM — tunggu secret diisi
-      lalu commit → tag v0.1.3 → push.
+      `aapt2 dump badging`). Status rilis v0.1.3: ✅ TERBIT lengkap
+      (28 Sep 2026, lihat poin 15).
 15. **Windows masuk GitHub Release** ✅ workflow (26 Sep 2026, BELUM rilis):
     - `release.yml`: job `release` → `android`, tambah job `windows`
       (`windows-latest`): Flutter 3.47.5 + `pub get` + `choco install
@@ -193,6 +196,31 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
       Syarat build lokal: Developer Mode ON + nuget di PATH.
     - Status: workflow BELUM di-push; ikut terbang saat commit+tag v0.1.3
       (butuh 4 secret Android tetap diisi, kalau tidak job android gagal).
+    - HASIL CI v0.1.3 (run 36159007710): job `windows` ✅ SUKSES —
+      `exambrow-v0.1.3-windows-x64.zip` (12,4 MB) sudah terbit di Release v0.1.3.
+      Job `android` ❌ GAGAL di step "Build APK" (restore keystore exit 0 tapi
+      kemungkinan secret kosong/rusak → keystore tak valid). APK Android v0.1.3
+      BELUM ada. Efek samping: `releases/latest` = v0.1.3 tanpa asset APK →
+      `checkForUpdate()` return null (fail-open) → HP tidak melihat update
+      sampai APK terbit. Perbaikan: isi/cek 4 secret → re-run failed jobs →
+      APK ter-upload ke Release yang sama (tanpa tag baru).
+    - ✅ SELESAI (28 Sep 2026): 4 secret diisi manual via browser
+      (base64 keystore via clip.exe + 3 password dari key.properties) →
+      Re-run failed jobs → attempt 3 SUKSES. Verifikasi APK arm64 dari Release:
+      versionName=0.1.3, versionCode=2004, native-code arm64-v8a (aapt2);
+      signature SHA-256 = c4eb1aeb...f8122594 = SAMA dengan keystore lokal
+      (apksigner verify --print-certs, butuh JAVA_HOME di PATH untuk jalan).
+      Release v0.1.3 KOMPLET: arm64 19,4 MB + v7a 16,8 MB + windows zip 12,4 MB.
+      Auto-update sekarang berfungsi: HP dgn app lama akan melihat v0.1.3 + APK.
+      MASIH WAJIB: user uninstall manual app lama (debug-signed) SATU KALI
+      sebelum install v0.1.3; setelah itu update v0.1.4+ bisa timpa langsung.
+    - UJI E2E AUTO-UPDATE dari v0.1.2 → v0.1.3 (28 Sep 2026, HP user): ✅ 3 dari
+      4 langkah BERHASIL — update terdeteksi, APK terunduh otomatis, installer
+      terbuka. Install DITOLAK Android dgn "paket ini bentrok dengan paket yang
+      sudah ada" (INSTALL_FAILED_UPDATE_INCOMPATIBLE) = PERILAKU DUGA (debug key
+      v0.1.2 ≠ key permanen v0.1.3), bukan bug. Solusi: uninstall 1x lalu install
+      v0.1.3 manual. Mekanisme update (deteksi+unduh+buka installer) TERBUKTI jalan;
+      uji install-langsung-tanpa-uninstall baru bermakna di v0.1.4 (key sama).
 
 ## 6. Command Cepat untuk Lanjut Kerja
 
@@ -227,6 +255,10 @@ Build Windows butuh Developer Mode ON (untuk symlink plugin) + nuget di PATH:
         fullscreen, whitelist, blokir copy, keluar PIN (belum diuji ulang)
       ⚠️ vivo 1918: BACK saat PINNED memicu gesture unpin bawaan (dialog konfirmasi vivo);
       perilaku unpin standar Android untuk pinning non-device-owner, bukan bug aplikasi.
+- [x] Uji E2E auto-update ✅ (28 Sep 2026): deteksi update + unduh APK + buka
+      installer TERBUKTI jalan (v0.1.2→v0.1.3); install akhir ditolak Android
+      karena transisi debug→key permanen (lihat poin 5.15). Sisa: uji timpa
+      langsung tanpa uninstall mulai v0.1.4.
 - [x] Blokir copy-paste/screenshot ✅ (25 Sep 2026): JS inject di exam_screen + FLAG_SECURE Android
 - [x] Icon aplikasi ✅ (25 Sep 2026): flutter_launcher_icons + assets/icon/
 - [ ] Deteksi kamera (belum dikerjakan)
@@ -242,9 +274,12 @@ Build Windows butuh Developer Mode ON (untuk symlink plugin) + nuget di PATH:
 - Tidak ada Android Studio / emulator; device Android diuji via APK manual
 - Drive D: untuk project & data, C: untuk toolchain
 
-## 9. Register Perubahan (sesi 26 Sep 2026, BELUM di-commit) + Solusi Edit per File
+## 9. Register Perubahan (sesi 26 Sep 2026 — SUDAH ter-commit di 763fa5d) + Solusi Edit per File
 
 Status: `M` = modified, `baru` = file baru. Cara cek: `git status --short`.
+Sesi 28 Sep 2026 (lanjutan setelah terminal tertutup): hanya `work.md` berubah —
+isi 4 secret, re-run CI sukses, verifikasi signature APK, hasil uji E2E update
+v0.1.2→v0.1.3 (semua tercatat di poin 5.15). `image.png` masih untracked.
 
 | # | File | Status | Isi perubahan |
 |---|---|---|---|
