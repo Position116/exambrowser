@@ -226,6 +226,13 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
       whitelist, blokir back, kiosk (HOME/RECENTS + keep-screen-on + fullscreen),
       FLAG_SECURE (screenshot + screen record), blokir copy-paste, PIN keluar
       (salah ditolak, 123456 lolos). Detail per item di bagian 7.
+    - UJI WINDOWS v0.1.3 LOLOS (28 Sep 2026): rebuild fresh (51,4s, Developer
+      Mode + nuget OK; warning CMake CMP0175 dari plugin inappwebview =
+      harmless) lalu exam_brow.exe diuji: icon + judul, header/footer, URL
+      persist, fullscreen, whitelist, blokir copy/seleksi, tombol X diblokir
+      saat ujian (WindowListener), PIN keluar (salah ditolak, 123456 lolos) —
+      SEMUA LOLOS. Peluncuran dari Git Bash: `cmd //c start "" exam_brow.exe`
+      timeout 15s tapi app jalan (quirk pipe Git Bash; cek via tasklist).
 
 ## 6. Command Cepat untuk Lanjut Kerja
 
@@ -261,8 +268,11 @@ Build Windows butuh Developer Mode ON (untuk symlink plugin) + nuget di PATH:
       nyala (KEEP_SCREEN_ON), status/nav bar tersembunyi; FLAG_SECURE: screenshot
       DIBLOKIR + screen record diblokir/hitam; long-press teks: seleksi/copy tidak
       muncul (JS inject); PIN: salah ditolak, 123456 keluar ke settings.
-      - Windows build v0.1.3: belum diuji ulang (cek icon, fullscreen, whitelist,
-        blokir copy, keluar PIN)
+      - Windows build v0.1.3 ✅ DIUJI ULANG (28 Sep 2026): icon topi wisuda,
+        header/footer, URL persist, fullscreen, whitelist, blokir copy, blokir
+        close (X), PIN keluar — SEMUA LOLOS. Build di-rebuild fresh (51,4s)
+        sebelum uji supaya exe pasti = source v0.1.3 (exe lama 3 menit lebih
+        tua dari commit terakhir).
       ⚠️ vivo 1918: BACK saat PINNED memicu gesture unpin bawaan (dialog konfirmasi vivo);
       perilaku unpin standar Android untuk pinning non-device-owner, bukan bug aplikasi.
 - [x] Uji E2E auto-update ✅ (28 Sep 2026): deteksi update + unduh APK + buka
