@@ -356,3 +356,52 @@ user) DIHAPUS dari repo 28 Sep 2026 — working tree bersih.
    uninstall di update BERIKUTNYA (v0.1.4+), berarti CI menandatangani dengan
    key berbeda → cek secret CI vs key lokal (bandingkan SHA-256:
    `keytool -list -keystore android\app\exambrow-release.jks`).
+
+## 10. Checklist Backup Keystore (`exambrow-release.jks`)
+
+> Keystore hilang = semua update SELAMANYA gagal timpa (harus uninstall + key
+> baru — lihat §9 poin 5-7). Backup WAJIB ada di minimal 2 tempat.
+> Dibuat 28 Sep 2026.
+
+### File yang di-backup (2 file, satu paket — JANGAN dipisah)
+| File | Isi | Ukuran |
+|---|---|---|
+| `android/app/exambrow-release.jks` | keystore PKCS12, alias `exambrow`, valid 30 thn | 2,7 KB |
+| `android/key.properties` | password store & key (rahasia) | 122 B |
+
+Fingerprint pembanding (SHA-256 harus SAMA di semua salinan):
+`C4:EB:1A:EB:2A:76:CA:E0:4B:BE:DF:2C:42:56:1B:5E:F9:01:A9:5B:94:A6:CF:2F:A2:AC:9A:C7:F8:12:25:94`
+
+### Langkah backup
+- [ ] 1. Colok flashdisk → catat huruf drive (contoh di bawah pakai `E:`)
+- [ ] 2. Copy kedua file (terminal Git Bash):
+       `mkdir -p /e/BackupExamBrow && cp "android/app/exambrow-release.jks" android/key.properties /e/BackupExamBrow/`
+- [ ] 3. Verifikasi salinan di flashdisk:
+       `"/c/tools/jdk-17.0.20.1+1/bin/keytool" -list -keystore /e/BackupExamBrow/exambrow-release.jks`
+       → SHA-256 harus cocok dengan fingerprint di atas
+- [ ] 4. Uji restore: copy balik dari flashdisk ke folder sementara → jalankan
+       keytool lagi → hasil cocok → hapus folder sementara
+- [ ] 5. Label fisik flashdisk: "EXAMBROW KEY — JANGAN HILANG (valid 30 thn)"
+- [ ] 6. Lokasi ke-2 (cloud pribadi): upload KEDUA file ke Google Drive /
+       OneDrive folder privat. File kecil, boleh apa adanya; kalau mau ekstra
+       aman, zip berpassword (7-Zip). Simpan password zip di manajer password.
+- [ ] 7. Catat kedua password (store & key dari key.properties) di password
+       manager / catatan fisik aman. JANGAN kirim via email/chat (§9 poin 5).
+- [ ] 8. Isi register backup di bawah.
+
+### Register backup
+| Tanggal | Lokasi | SHA-256 diverifikasi | Catatan |
+|---|---|---|---|
+| (belum) | Flashdisk | — | — |
+| (belum) | Cloud (Drive/OneDrive) | — | — |
+
+### Redundansi yang sudah ada (bonus — BUKAN pengganti backup fisik)
+- GitHub Actions secret `ANDROID_KEYSTORE_BASE64` = salinan terenkripsi di
+  GitHub (di luar kendali penuh user; jangan jadi satu-satunya).
+- Laptop utama `D:\Project Web\ExamBrow\android\app\` = salinan aktif.
+
+### Aturan penting
+- Lakukan backup SEKARANG — keystore TIDAK bisa diregenerasi.
+- Ganti laptop / clone baru: copy dari backup, JANGAN generate key baru.
+- Cek ulang salinan tiap ±6 bulan (flashdisk bisa rusak; format exFAT agar
+  terbaca di Windows & Mac).
