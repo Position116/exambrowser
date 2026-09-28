@@ -430,8 +430,8 @@ Fingerprint pembanding (SHA-256 harus SAMA di semua salinan):
 | Tanggal | Lokasi | SHA-256 diverifikasi | Catatan |
 |---|---|---|---|
 | 28 Sep 2026 | `D:\BackupExamBrow` | ✅ file + uji restore lolos | INTERIM — masih disk yang sama, BUKAN backup offline; flashdisk/cloud masih wajib |
-| (belum) | Flashdisk | — | — |
-| (belum) | Cloud (Drive/OneDrive) | — | — |
+| 28 Sep 2026 | OneDrive: `Backup/ExamBrow` | ✅ SHA-256 identik (f25be0ea...d98ebcf) | Otomatis sync ke cloud (OneDrive.exe aktif); user cek icon ✓ hijau di File Explorer saat online |
+| (belum) | Flashdisk | — | Flashdisk tidak terdeteksi Windows (coba port/PC lain); opsional karena sudah ada D: + cloud |
 
 Catatan proses backup D: (28 Sep 2026): SHA-256 sumber vs salinan identik
 (`f25be0ea...d98ebcf`), keytool baca salinan → fingerprint `C4:EB:...:25:94`
@@ -443,6 +443,10 @@ coba lagi flashdisk/port lain; alternatif: upload cloud langsung.
 - GitHub Actions secret `ANDROID_KEYSTORE_BASE64` = salinan terenkripsi di
   GitHub (di luar kendali penuh user; jangan jadi satu-satunya).
 - Laptop utama `D:\Project Web\ExamBrow\android\app\` = salinan aktif.
+- ✅ STATUS 28 Sep 2026: backup offline-tipe-cloud TERCAPAI (OneDrive sync
+  otomatis + salinan di D: + secret GitHub = 3 lokasi berbeda media). Backup
+  flashdisk fisik tetap disarankan untuk antisipasi internet/laptop hilang,
+  tapi bukan lagi bloker kritikal.
 
 ### Aturan penting
 - Lakukan backup SEKARANG — keystore TIDAK bisa diregenerasi.
