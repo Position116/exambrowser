@@ -221,6 +221,11 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
       v0.1.2 ≠ key permanen v0.1.3), bukan bug. Solusi: uninstall 1x lalu install
       v0.1.3 manual. Mekanisme update (deteksi+unduh+buka installer) TERBUKTI jalan;
       uji install-langsung-tanpa-uninstall baru bermakna di v0.1.4 (key sama).
+    - UJI MANUAL v0.1.3 LENGKAP LOLOS (28 Sep 2026, vivo 1918, tanpa kabel):
+      semua checklist lolos — install, settings (header/footer/URL persist),
+      whitelist, blokir back, kiosk (HOME/RECENTS + keep-screen-on + fullscreen),
+      FLAG_SECURE (screenshot + screen record), blokir copy-paste, PIN keluar
+      (salah ditolak, 123456 lolos). Detail per item di bagian 7.
 
 ## 6. Command Cepat untuk Lanjut Kerja
 
@@ -247,12 +252,17 @@ Build Windows butuh Developer Mode ON (untuk symlink plugin) + nuget di PATH:
 
 ## 7. Yang Belum Dikerjakan / Kandidat Lanjutan
 
-- [~] Uji manual APK di HP ✅ SEBAGIAN (25 Sep 2026, vivo 1918 via adb): header/footer baru,
-      gate RAM lolos (HP 4GB), kiosk PINNED, keep-screen-on + SECURE aktif di window flags,
-      HOME & RECENTS diblokir saat kiosk. BELUM diuji user: login + navigation whitelist di
-      situs ujian, keluar dengan PIN, screenshot (FLAG_SECURE), long-press teks.
-      - Windows: jalankan `build\windows\x64\runner\Release\exam_brow.exe` — cek icon,
-        fullscreen, whitelist, blokir copy, keluar PIN (belum diuji ulang)
+- [x] Uji manual APK v0.1.3 di HP ✅ LENGKAP (28 Sep 2026, vivo 1918, uji manual tanpa
+      kabel — semua checklist lolos):
+      install dari Release arm64 tanpa hambatan (setelah uninstall 1x app debug-signed);
+      settings: header "Exam Browser" + footer © Ronald Aveiro + URL tersimpan setelah
+      app ditutup; webview: navigasi dalam host lancar, link keluar host DIBLOKIR,
+      tombol Back HP diblokir (PopScope); kiosk: HOME & RECENTS terkunci, layar tetap
+      nyala (KEEP_SCREEN_ON), status/nav bar tersembunyi; FLAG_SECURE: screenshot
+      DIBLOKIR + screen record diblokir/hitam; long-press teks: seleksi/copy tidak
+      muncul (JS inject); PIN: salah ditolak, 123456 keluar ke settings.
+      - Windows build v0.1.3: belum diuji ulang (cek icon, fullscreen, whitelist,
+        blokir copy, keluar PIN)
       ⚠️ vivo 1918: BACK saat PINNED memicu gesture unpin bawaan (dialog konfirmasi vivo);
       perilaku unpin standar Android untuk pinning non-device-owner, bukan bug aplikasi.
 - [x] Uji E2E auto-update ✅ (28 Sep 2026): deteksi update + unduh APK + buka
@@ -279,7 +289,9 @@ Build Windows butuh Developer Mode ON (untuk symlink plugin) + nuget di PATH:
 Status: `M` = modified, `baru` = file baru. Cara cek: `git status --short`.
 Sesi 28 Sep 2026 (lanjutan setelah terminal tertutup): hanya `work.md` berubah —
 isi 4 secret, re-run CI sukses, verifikasi signature APK, hasil uji E2E update
-v0.1.2→v0.1.3 (semua tercatat di poin 5.15). `image.png` masih untracked.
+v0.1.2→v0.1.3 (commit 6720f95, SUDAH di-push ke origin/main).
+Lanjutan sesi 28 Sep: uji manual v0.1.3 di vivo 1918 LOLOS SEMUA (detail di
+bagian 7) — tercatat di commit berikutnya. `image.png` masih untracked.
 
 | # | File | Status | Isi perubahan |
 |---|---|---|---|
