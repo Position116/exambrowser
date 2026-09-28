@@ -255,6 +255,12 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
       versionName=0.1.4 versionCode=2005, apksigner = keystore permanen
       (c4eb...2594) → bisa timpa v0.1.3 TANPA uninstall. Rilis via CI + tag
       v0.1.4 → sekaligus uji auto-update timpa langsung di HP.
+    - HASIL AKHIR v0.1.4 di vivo 1918 (28 Sep 2026): CI run 36376360598
+      SUKSES, Release v0.1.4 lengkap (arm64+v7a+win zip); auto-update
+      v0.1.3→v0.1.4 TERPASANG TANPA uninstall (signature sama — alur
+      auto-update SELESAI teruji penuh); bar status tampil di kedua layar:
+      WiFi realtime + nama perangkat + versi Android + RAM ~3,8 GB.
+      Backlog "uji timpa langsung" TUTUP.
     - ⚠️ PELAJARAN BUILD: app Windows yang masih berjalan mengunci file di
       folder Release → build baru GAGAL menyalin data TANPA error → app jalan
       versi lama/stale. WAJIB `taskkill //IM exam_brow.exe //F` SEBELUM
@@ -303,8 +309,9 @@ Build Windows butuh Developer Mode ON (untuk symlink plugin) + nuget di PATH:
       perilaku unpin standar Android untuk pinning non-device-owner, bukan bug aplikasi.
 - [x] Uji E2E auto-update ✅ (28 Sep 2026): deteksi update + unduh APK + buka
       installer TERBUKTI jalan (v0.1.2→v0.1.3); install akhir ditolak Android
-      karena transisi debug→key permanen (lihat poin 5.15). Sisa: uji timpa
-      langsung tanpa uninstall mulai v0.1.4.
+      karena transisi debug→key permanen (lihat poin 5.15). Timpa langsung
+      TANPA uninstall TERBUKTI di v0.1.4 (28 Sep 2026) — alur auto-update
+      selesai teruji penuh.
 - [x] Blokir copy-paste/screenshot ✅ (25 Sep 2026): JS inject di exam_screen + FLAG_SECURE Android
 - [x] Icon aplikasi ✅ (25 Sep 2026): flutter_launcher_icons + assets/icon/
 - [ ] Deteksi kamera (belum dikerjakan)
@@ -329,6 +336,10 @@ v0.1.2→v0.1.3 (commit 6720f95, SUDAH di-push ke origin/main).
 Lanjutan sesi 28 Sep: uji manual v0.1.3 di vivo 1918 LOLOS SEMUA (detail di
 bagian 7) — tercatat di commit berikutnya. `image.png` (gambar aturan dari
 user) DIHAPUS dari repo 28 Sep 2026 — working tree bersih.
+Lanjutan lagi 28 Sep: fitur bar status (poin 16) → commit 6c57663 (v0.1.4) +
+17580d1 (generated plugins), tag v0.1.4 → CI run 36376360598 sukses →
+Release v0.1.4 lengkap → uji HP LOLOS SEMUA (auto-update tanpa uninstall +
+bar status realtime di kedua layar).
 
 | # | File | Status | Isi perubahan |
 |---|---|---|---|
