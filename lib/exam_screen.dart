@@ -2,9 +2,16 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
-    show MethodChannel, MissingPluginException, PlatformException, SystemChrome, SystemUiMode;
+    show
+        MethodChannel,
+        MissingPluginException,
+        PlatformException,
+        SystemChrome,
+        SystemUiMode;
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:window_manager/window_manager.dart';
+
+import 'device_status_bar.dart';
 
 /// Channel kiosk mode Android (implementasi di MainActivity.kt).
 const MethodChannel _kioskChannel = MethodChannel('exam_brow/kiosk');
@@ -14,8 +21,8 @@ const String kSupervisorPin = '123456';
 
 /// window_manager hanya ada di desktop; panggilan di Android/iOS
 /// akan melempar MissingPluginException (harus di-guard).
-final bool _isDesktop = !kIsWeb &&
-    (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+final bool _isDesktop =
+    !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
 class ExamScreen extends StatefulWidget {
   const ExamScreen({super.key, required this.url});
@@ -176,45 +183,56 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener {
         await _requestExit();
       },
       child: Scaffold(
-        body: Stack(
+        body: Column(
           children: [
-            InAppWebView(
-              initialUrlRequest: URLRequest(url: WebUri(widget.url)),
-              initialSettings: InAppWebViewSettings(
-                supportZoom: false,
-                disableContextMenu: true,
-                disableLongPressContextMenuOnLinks: true,
+            // Webview mengisi seluruh sisa layar di atas bar status.
+            Expanded(
+              child: Stack(
+                children: [
+                  InAppWebView(
+                    initialUrlRequest: URLRequest(url: WebUri(widget.url)),
+                    initialSettings: InAppWebViewSettings(
+                      supportZoom: false,
+                      disableContextMenu: true,
+                      disableLongPressContextMenuOnLinks: true,
+                    ),
+                    // Blokir copy-paste & seleksi teks di dalam halaman ujian.
+                    // (Tombol/dropdown situs tetap berfungsi; hanya seleksi & clipboard
+                    // yang dimatikan. Keyboard tetap normal untuk menjawab soal.)
+                    onLoadStop: (controller, url) async {
+                      await controller.evaluateJavascript(
+                        source: _blockClipboardJs,
+                      );
+                    },
+                    // Whitelist: hanya host server ujian yang boleh dibuka.
+                    shouldOverrideUrlLoading:
+                        (controller, navigationAction) async {
+                      final target = navigationAction.request.url;
+                      if (target == null || target.host != _examUri.host) {
+                        return NavigationActionPolicy.CANCEL;
+                      }
+                      return NavigationActionPolicy.ALLOW;
+                    },
+                  ),
+                  // Tombol keluar kecil di pojok kanan bawah webview
+                  // (untuk pengawas) — di atas bar status perangkat.
+                  Positioned(
+                    right: 8,
+                    bottom: 48,
+                    child: Opacity(
+                      opacity: 0.35,
+                      child: IconButton(
+                        tooltip: 'Keluar mode ujian',
+                        icon: const Icon(Icons.lock_outline),
+                        onPressed: _requestExit,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              // Blokir copy-paste & seleksi teks di dalam halaman ujian.
-              // (Tombol/dropdown situs tetap berfungsi; hanya seleksi & clipboard
-              // yang dimatikan. Keyboard tetap normal untuk menjawab soal.)
-              onLoadStop: (controller, url) async {
-                await controller.evaluateJavascript(
-                  source: _blockClipboardJs,
-                );
-              },
-              // Whitelist: hanya host server ujian yang boleh dibuka.
-              shouldOverrideUrlLoading: (controller, navigationAction) async {
-                final target = navigationAction.request.url;
-                if (target == null || target.host != _examUri.host) {
-                  return NavigationActionPolicy.CANCEL;
-                }
-                return NavigationActionPolicy.ALLOW;
-              },
             ),
-            // Tombol keluar kecil di pojok kanan bawah (untuk pengawas).
-            Positioned(
-              right: 8,
-              bottom: 8,
-              child: Opacity(
-                opacity: 0.35,
-                child: IconButton(
-                  tooltip: 'Keluar mode ujian',
-                  icon: const Icon(Icons.lock_outline),
-                  onPressed: _requestExit,
-                ),
-              ),
-            ),
+            // Bar status: jaringan realtime + nama perangkat + OS + RAM.
+            const DeviceStatusBar(),
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'device_status_bar.dart';
 import 'exam_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -72,6 +73,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Exam Browser'),
         centerTitle: true,
       ),
+      // Bar status perangkat + jaringan realtime, tetap di bagian bawah
+      // layar utama (sama seperti di layar ujian).
+      bottomNavigationBar: const DeviceStatusBar(),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

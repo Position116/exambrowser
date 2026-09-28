@@ -30,6 +30,7 @@ Komunikasi dalam **Bahasa Indonesia**.
 | `lib/settings_screen.dart` | Form URL server (tersimpan via shared_preferences, key: `server_url`); header "Exam Browser" + footer "CopyRight Ronald Aveiro"; TANPA input PIN |
 | `lib/exam_screen.dart` | Webview kiosk: whitelist host, PopScope blokir back, WindowListener blokir close Windows, dialog PIN keluar, tombol gembok kecil pojok kanan-bawah (opacity 0.35), inject JS blokir copy-paste/seleksi teks (`_blockClipboardJs` via `onLoadStop`), kiosk Android (lihat bagian 5 poin 10) |
 | `lib/update_service.dart` | Auto-update: cek GitHub Releases + layar update wajib (unduh APK + buka installer) |
+| `lib/device_status_bar.dart` | Bar status bawah layar: jaringan REALTIME (warna: hijau WiFi/Ethernet, oranye seluler, merah offline, abu tak-diketahui) + nama perangkat + versi OS + RAM (Android only, via MethodChannel getTotalRamMb) |
 | `test/widget_test.dart` | Test halaman pengaturan (LULUS) |
 | `SETUP.md` | Panduan setup untuk user |
 | `EXAM_SYSTEMS.md` | Katalog sistem ujian online (ANBK/CBT/Moodle dll) + cara isi URL whitelist |
@@ -42,6 +43,8 @@ Komunikasi dalam **Bahasa Indonesia**.
 - `flutter_inappwebview: ^6.1.5` (webview; Windows pakai endorsed package `flutter_inappwebview_windows 0.6.0` + WebView2 + **butuh nuget.exe**)
 - `window_manager: ^0.4.3`
 - `shared_preferences: ^2.3.2`
+- `connectivity_plus: ^7.3.1` (jaringan realtime; API v7 = List<ConnectivityResult>)
+- `device_info_plus: ^13.2.0` (nama perangkat + versi OS)
 - `flutter_lints: ^5.0.0`
 - `flutter_launcher_icons: ^0.14.4` (dev; config di pubspec.yaml, key `flutter_launcher_icons`)
 
@@ -233,6 +236,29 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
       saat ujian (WindowListener), PIN keluar (salah ditolak, 123456 lolos) —
       SEMUA LOLOS. Peluncuran dari Git Bash: `cmd //c start "" exam_brow.exe`
       timeout 15s tapi app jalan (quirk pipe Git Bash; cek via tasklist).
+16. **Bar status perangkat + jaringan realtime** ✅ (28 Sep 2026, v0.1.4+5):
+    - Permintaan user: "pada layar bagian bawah tambahkan deteksi perangkat,
+      termasuk deteksi jaringan realtime" → ditampilkan di KEDUA layar
+      (exam: bawah webview via Column+Expanded; settings: bottomNavigationBar).
+    - Isi bar (user pilih via ask_user): jaringan realtime + nama perangkat +
+      versi OS + RAM. Gaya: bar berwarna mengikuti status jaringan.
+    - API connectivity_plus v7: checkConnectivity() & onConnectivityChanged
+      mengembalikan List<ConnectivityResult> (bukan single value seperti v4).
+      Subscribe dulu baru cek kondisi awal supaya tidak ada event terlewat.
+    - Fail-open: baca info gagal → segmen disembunyikan, app jalan normal.
+    - Permission ACCESS_NETWORK_STATE TIDAK perlu ditambah manual — otomatis
+      ter-merge dari manifest plugin connectivity_plus.
+    - Windows: nama = info.computerName, OS = info.productName; RAM segmen
+      hanya Android (MethodChannel exam_brow/device_info getTotalRamMb).
+    - Uji Windows LOLOS: bar muncul di kedua layar, realtime offline/online.
+    - Android v0.1.4: build arm64 sukses (18,7 MB), verifikasi aapt2
+      versionName=0.1.4 versionCode=2005, apksigner = keystore permanen
+      (c4eb...2594) → bisa timpa v0.1.3 TANPA uninstall. Rilis via CI + tag
+      v0.1.4 → sekaligus uji auto-update timpa langsung di HP.
+    - ⚠️ PELAJARAN BUILD: app Windows yang masih berjalan mengunci file di
+      folder Release → build baru GAGAL menyalin data TANPA error → app jalan
+      versi lama/stale. WAJIB `taskkill //IM exam_brow.exe //F` SEBELUM
+      `flutter build windows --release`.
 
 ## 6. Command Cepat untuk Lanjut Kerja
 
