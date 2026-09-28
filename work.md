@@ -399,6 +399,10 @@ bar status realtime di kedua layar).
 > Keystore hilang = semua update SELAMANYA gagal timpa (harus uninstall + key
 > baru — lihat §9 poin 5-7). Backup WAJIB ada di minimal 2 tempat.
 > Dibuat 28 Sep 2026.
+>
+> ✅ STATUS: TUNTAS (28 Sep 2026) — keystore aman di 3 lokasi berbeda media:
+> laptop (aktif) + disk D: + OneDrive cloud + bonus secret GitHub. Flashdisk
+> fisik = opsional (Windows tidak mendeteksi flashdisk saat itu).
 
 ### File yang di-backup (2 file, satu paket — JANGAN dipisah)
 | File | Isi | Ukuran |
@@ -411,20 +415,28 @@ Fingerprint pembanding (SHA-256 harus SAMA di semua salinan):
 
 ### Langkah backup
 - [ ] 1. Colok flashdisk → catat huruf drive (contoh di bawah pakai `E:`)
+       *(OPSIONAL — Windows tidak mendeteksi flashdisk, 28 Sep 2026)*
 - [ ] 2. Copy kedua file (terminal Git Bash):
        `mkdir -p /e/BackupExamBrow && cp "android/app/exambrow-release.jks" android/key.properties /e/BackupExamBrow/`
+       *(terlaksana versi D:: `cp ... /d/BackupExamBrow/` — ✅)*
 - [ ] 3. Verifikasi salinan di flashdisk:
        `"/c/tools/jdk-17.0.20.1+1/bin/keytool" -list -keystore /e/BackupExamBrow/exambrow-release.jks`
        → SHA-256 harus cocok dengan fingerprint di atas
-- [ ] 4. Uji restore: copy balik dari flashdisk ke folder sementara → jalankan
-       keytool lagi → hasil cocok → hapus folder sementara
+       *(terlaksana di D: & OneDrive — ✅ SHA-256 identik `f25be0ea...d98ebcf`)*
+- [x] 4. Uji restore: copy balik dari backup ke folder sementara → jalankan
+       keytool lagi → hasil cocok → hapus folder sementara *(✅ dari D:,
+       fingerprint `C4:EB:...:25:94` cocok)*
 - [ ] 5. Label fisik flashdisk: "EXAMBROW KEY — JANGAN HILANG (valid 30 thn)"
-- [ ] 6. Lokasi ke-2 (cloud pribadi): upload KEDUA file ke Google Drive /
-       OneDrive folder privat. File kecil, boleh apa adanya; kalau mau ekstra
-       aman, zip berpassword (7-Zip). Simpan password zip di manajer password.
+       *(OPSIONAL — ikut langkah 1)*
+- [x] 6. Lokasi ke-2 (cloud pribadi): ✅ SELESAI via OneDrive — kedua file di
+       `%USERPROFILE%\OneDrive\Backup\ExamBrow`, SHA-256 identik, OneDrive.exe
+       aktif (sync otomatis). User verifikasi icon ✓ hijau / cek di onedrive.com.
+       Zip berpassword dilewati (folder pribadi + file kecil); boleh menyusul.
 - [ ] 7. Catat kedua password (store & key dari key.properties) di password
        manager / catatan fisik aman. JANGAN kirim via email/chat (§9 poin 5).
-- [ ] 8. Isi register backup di bawah.
+       *(dikerjakan user sendiri — file key.properties ikut ter-backup, tapi
+       hafalkan/catat password-nya juga)*
+- [x] 8. Isi register backup di bawah. *(✅)*
 
 ### Register backup
 | Tanggal | Lokasi | SHA-256 diverifikasi | Catatan |
