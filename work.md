@@ -392,8 +392,15 @@ Fingerprint pembanding (SHA-256 harus SAMA di semua salinan):
 ### Register backup
 | Tanggal | Lokasi | SHA-256 diverifikasi | Catatan |
 |---|---|---|---|
+| 28 Sep 2026 | `D:\BackupExamBrow` | ✅ file + uji restore lolos | INTERIM — masih disk yang sama, BUKAN backup offline; flashdisk/cloud masih wajib |
 | (belum) | Flashdisk | — | — |
 | (belum) | Cloud (Drive/OneDrive) | — | — |
+
+Catatan proses backup D: (28 Sep 2026): SHA-256 sumber vs salinan identik
+(`f25be0ea...d98ebcf`), keytool baca salinan → fingerprint `C4:EB:...:25:94`
+cocok, uji restore (copy balik + baca + hapus folder tes) lolos. Flashdisk
+hari itu TIDAK terdeteksi Windows sama sekali (Get-Disk hanya 1 disk NVMe) —
+coba lagi flashdisk/port lain; alternatif: upload cloud langsung.
 
 ### Redundansi yang sudah ada (bonus — BUKAN pengganti backup fisik)
 - GitHub Actions secret `ANDROID_KEYSTORE_BASE64` = salinan terenkripsi di
