@@ -301,7 +301,8 @@ Sesi 28 Sep 2026 (lanjutan setelah terminal tertutup): hanya `work.md` berubah �
 isi 4 secret, re-run CI sukses, verifikasi signature APK, hasil uji E2E update
 v0.1.2→v0.1.3 (commit 6720f95, SUDAH di-push ke origin/main).
 Lanjutan sesi 28 Sep: uji manual v0.1.3 di vivo 1918 LOLOS SEMUA (detail di
-bagian 7) — tercatat di commit berikutnya. `image.png` masih untracked.
+bagian 7) — tercatat di commit berikutnya. `image.png` (gambar aturan dari
+user) DIHAPUS dari repo 28 Sep 2026 — working tree bersih.
 
 | # | File | Status | Isi perubahan |
 |---|---|---|---|
