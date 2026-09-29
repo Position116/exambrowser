@@ -430,6 +430,12 @@ Sesi 29 Sep 2026: fitur logout paksa saat layar HP dimatikan (poin 17) →
 commit 23ccfac, tag v0.1.5 → Release v0.1.5 via CI → uji HP oleh user
 LOLOS ("sip berfungsi dengan baik") — uji timpa langsung v0.1.4→v0.1.5
 juga lulus (signature sama).
+Sesi 29 Sep (lanjutan): hardening kiosk setara SEB (poin 18) → commit
+9ea48b9, tag v0.1.6, SUDAH di-push → CI build + Release v0.1.6.
+⚠️ BELUM dilakukan saat sesi ditutup: (a) verifikasi CI/Release v0.1.6
+lengkap, (b) auto-update di HP + uji kartu status (oranye dulu),
+(c) provisioning device owner di HP fisik, (d) uji hardening Windows
+(Task Manager + Win key). Semua checklist uji ada di bagian 7.
 
 | # | File | Status | Isi perubahan |
 |---|---|---|---|
