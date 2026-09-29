@@ -28,7 +28,7 @@ Komunikasi dalam **Bahasa Indonesia**.
 |---|---|
 | `lib/main.dart` | Entry point + window_manager setup (judul, min size 800x600) |
 | `lib/settings_screen.dart` | Form URL server (tersimpan via shared_preferences, key: `server_url`); header "Exam Browser" + footer "CopyRight Ronald Aveiro"; TANPA input PIN |
-| `lib/exam_screen.dart` | Webview kiosk: whitelist host, PopScope blokir back, WindowListener blokir close Windows, dialog PIN keluar, tombol gembok kecil pojok kanan-bawah (opacity 0.35), inject JS blokir copy-paste/seleksi teks (`_blockClipboardJs` via `onLoadStop`), kiosk Android (lihat bagian 5 poin 10) |
+| `lib/exam_screen.dart` | Webview kiosk: whitelist host, PopScope blokir back, WindowListener blokir close Windows, dialog PIN keluar, tombol gembok kecil pojok kanan-bawah (opacity 0.35), inject JS blokir copy-paste/seleksi teks (`_blockClipboardJs` via `onLoadStop`), kiosk Android (lihat bagian 5 poin 10), logout paksa saat layar HP dimatikan >5 dtk (poin 17) |
 | `lib/update_service.dart` | Auto-update: cek GitHub Releases + layar update wajib (unduh APK + buka installer) |
 | `lib/device_status_bar.dart` | Bar status bawah layar: jaringan REALTIME (warna: hijau WiFi/Ethernet, oranye seluler, merah offline, abu tak-diketahui) + nama perangkat + versi OS + RAM (Android only, via MethodChannel getTotalRamMb) |
 | `test/widget_test.dart` | Test halaman pengaturan (LULUS) |
@@ -265,6 +265,32 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
       folder Release → build baru GAGAL menyalin data TANPA error → app jalan
       versi lama/stale. WAJIB `taskkill //IM exam_brow.exe //F` SEBELUM
       `flutter build windows --release`.
+17. **Logout paksa saat layar HP dimatikan** ✅ (29 Sep 2026, v0.1.5+6):
+    - Permintaan user: saat ujian berjalan, jika layar HP dimatikan (tombol
+      power) → aplikasi memulai ulang dari login (logout) — fitur keamanan
+      supaya anak tetap fokus ke HP dan tidak "menghilang" dari ujian.
+    - Keputusan user (via ask_user): sesi web server ujian IKUT dihapus
+      (cookies + web storage) → anak harus login ulang di situs ujian.
+    - Implementasi DI lib/exam_screen.dart SAJA (tanpa ubah kode native):
+      `WidgetsBindingObserver.didChangeAppLifecycleState` — layar Android
+      mati → state `paused` (timestamp `_leftForegroundAt`); saat `resumed`,
+      jika durasi > 5 detik (`_screenOffGraceSeconds`, masa tenggang untuk
+      layar mati sesaat mis. dialog konfirmasi pinning) → `_forceLogout()`:
+      `_exitKiosk()` (stopLockTask + edgeToEdge) → hapus sesi via
+      `CookieManager().deleteAllCookies()` + `WebStorageManager().deleteAllData()`
+      (API terverifikasi ada di flutter_inappwebview 6.1.5) →
+      `Navigator.popUntil(route.isFirst)` balik ke settings + menutup dialog
+      PIN bila terbuka. TANPA PIN — inilah tujuannya.
+    - Guard `Platform.isAndroid` di awal handler → Windows desktop tidak
+      pernah `paused` oleh layar mati, otomatis tidak terpengaruh.
+    - Fail-open: gagal hapus cookies/storage di-catch → tetap keluar mode
+      ujian. Efek samping positif: lepas pin via gesture vivo + buka app
+      lagi (>5 dtk) juga logout.
+    - Verifikasi: analyze 0 issue, test lulus, build arm64 OK (versionName
+      0.1.5 / versionCode 2006 via aapt2, signature c4eb1aeb...2594 = keystore
+      permanen → bisa timpa v0.1.4 tanpa uninstall), build Windows OK.
+    - Catatan toolchain: apksigner di Windows = `apksigner.bat` (bukan binary
+      tanpa ekstensi); panggil via `cmd //c` dgn JAVA_HOME JDK 17 di PATH.
 
 ## 6. Command Cepat untuk Lanjut Kerja
 
@@ -314,6 +340,12 @@ Build Windows butuh Developer Mode ON (untuk symlink plugin) + nuget di PATH:
       selesai teruji penuh.
 - [x] Blokir copy-paste/screenshot ✅ (25 Sep 2026): JS inject di exam_screen + FLAG_SECURE Android
 - [x] Icon aplikasi ✅ (25 Sep 2026): flutter_launcher_icons + assets/icon/
+- [ ] Uji manual v0.1.5 di HP: saat ujian berjalan, matikan layar (tombol
+      power) >5 dtk → nyalakan lagi → harus langsung di layar settings
+      (logout tanpa PIN) + sesi login server ujian hangus (login ulang).
+      Serta: layar mati SESAAT (<5 dtk, mis. sengaja tekan-tekan power)
+      masih diampuni (tidak logout). Bonus: lepas pin via gesture vivo +
+      buka app lagi >5 dtk → juga logout.
 - [ ] Deteksi kamera (belum dikerjakan)
 - [ ] iOS build (butuh Mac atau Codemagic; akun Apple Developer $99/th untuk distribusi)
 - [ ] Catatan keamanan (sudah di SETUP.md): kiosk ini level dasar — bukan setinggi Safe Exam Browser;
@@ -481,6 +513,7 @@ coba lagi flashdisk/port lain; alternatif: upload cloud langsung.
 | Footer "© Ronald Aveiro" | `lib/settings_screen.dart` | `Row` di bawah tombol |
 | Teks/warna bar status | `lib/device_status_bar.dart` | `_resolveNetwork()` + `build()` |
 | Aturan whitelist host | `lib/exam_screen.dart` | `shouldOverrideUrlLoading` |
+| Masa tenggang logout layar mati (5 dtk) | `lib/exam_screen.dart` | konstanta `_screenOffGraceSeconds` (poin 17) |
 | Blokir copy-paste (JS) | `lib/exam_screen.dart` | `_blockClipboardJs` |
 | Ambang RAM 3584 MB | `lib/main.dart` | `DeviceGate` / `_BlockedSpecScreen` |
 | Repo auto-update | `lib/update_service.dart` | `kUpdateRepo` |

@@ -33,8 +33,16 @@ class ExamScreen extends StatefulWidget {
   State<ExamScreen> createState() => _ExamScreenState();
 }
 
-class _ExamScreenState extends State<ExamScreen> with WindowListener {
+class _ExamScreenState extends State<ExamScreen> with WindowListener, WidgetsBindingObserver {
   late final Uri _examUri = Uri.parse(widget.url);
+
+  /// Batas waktu (detik) sesi dianggap hangus jika layar dimatikan lebih
+  /// lama dari nilai ini. 5 detik = layar mati sesaat (mis. dialog konfirmasi
+  /// pinning Android atau ganti app sekejap) masih diampuni.
+  static const int _screenOffGraceSeconds = 5;
+
+  /// Waktu app meninggalkan foreground (layar dimatikan / pindah app).
+  DateTime? _leftForegroundAt;
 
   /// JavaScript yang diinjeksi ke halaman ujian untuk memblokir copy-paste:
   /// larang seleksi teks, salin, potong, tempel, drag, dan menu klik-kanan.
@@ -67,13 +75,51 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener {
   void initState() {
     super.initState();
     if (_isDesktop) windowManager.addListener(this);
+    WidgetsBinding.instance.addObserver(this);
     _enterKiosk();
   }
 
   @override
   void dispose() {
     if (_isDesktop) windowManager.removeListener(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  /// Keamanan ujian: layar HP dimatikan saat mode ujian -> sesi hangus,
+  /// aplikasi keluar paksa ke halaman login (settings) tanpa PIN.
+  /// Diimplementasi via lifecycle: layar Android mati -> state `paused`;
+  /// saat `resumed`, jika durasi di luar foreground melewati masa tenggang,
+  /// sesi diakhiri. Desktop tidak pernah `paused` oleh layar mati sehingga
+  /// Windows otomatis tidak terpengaruh.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!Platform.isAndroid) return;
+    if (state == AppLifecycleState.paused) {
+      _leftForegroundAt ??= DateTime.now();
+      return;
+    }
+    if (state == AppLifecycleState.resumed && _leftForegroundAt != null) {
+      final away = DateTime.now().difference(_leftForegroundAt!);
+      _leftForegroundAt = null;
+      if (away.inSeconds > _screenOffGraceSeconds) _forceLogout();
+    }
+  }
+
+  /// Akhiri sesi ujian paksa: hentikan kiosk, hapus cookies & web storage
+  /// (sesi login server ujian ikut hilang), lalu kembali ke layar settings.
+  /// Berjalan tanpa PIN — inilah tujuannya.
+  Future<void> _forceLogout() async {
+    await _exitKiosk();
+    try {
+      await CookieManager().deleteAllCookies();
+      await WebStorageManager().deleteAllData();
+    } catch (_) {
+      // Gagal bersih-bersih jangan menghalangi keluar dari mode ujian.
+    }
+    if (!mounted) return;
+    // popUntil: sekalian menutup dialog PIN bila kebetulan sedang terbuka.
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   /// Mode kiosk:
