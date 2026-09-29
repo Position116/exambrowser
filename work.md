@@ -340,12 +340,10 @@ Build Windows butuh Developer Mode ON (untuk symlink plugin) + nuget di PATH:
       selesai teruji penuh.
 - [x] Blokir copy-paste/screenshot ✅ (25 Sep 2026): JS inject di exam_screen + FLAG_SECURE Android
 - [x] Icon aplikasi ✅ (25 Sep 2026): flutter_launcher_icons + assets/icon/
-- [ ] Uji manual v0.1.5 di HP: saat ujian berjalan, matikan layar (tombol
-      power) >5 dtk → nyalakan lagi → harus langsung di layar settings
-      (logout tanpa PIN) + sesi login server ujian hangus (login ulang).
-      Serta: layar mati SESAAT (<5 dtk, mis. sengaja tekan-tekan power)
-      masih diampuni (tidak logout). Bonus: lepas pin via gesture vivo +
-      buka app lagi >5 dtk → juga logout.
+- [x] Uji manual v0.1.5 di HP ✅ LOLOS (29 Sep 2026, konfirmasi user): saat
+      ujian berjalan, layar dimatikan >5 dtk → dinyalakan → langsung di layar
+      settings (logout tanpa PIN) + sesi login server ujian hangus.
+      "sip berfungsi dengan baik" — fitur keamanan layar mati TUNTAS.
 - [ ] Deteksi kamera (belum dikerjakan)
 - [ ] iOS build (butuh Mac atau Codemagic; akun Apple Developer $99/th untuk distribusi)
 - [ ] Catatan keamanan (sudah di SETUP.md): kiosk ini level dasar — bukan setinggi Safe Exam Browser;
@@ -372,6 +370,10 @@ Lanjutan lagi 28 Sep: fitur bar status (poin 16) → commit 6c57663 (v0.1.4) +
 17580d1 (generated plugins), tag v0.1.4 → CI run 36376360598 sukses →
 Release v0.1.4 lengkap → uji HP LOLOS SEMUA (auto-update tanpa uninstall +
 bar status realtime di kedua layar).
+Sesi 29 Sep 2026: fitur logout paksa saat layar HP dimatikan (poin 17) →
+commit 23ccfac, tag v0.1.5 → Release v0.1.5 via CI → uji HP oleh user
+LOLOS ("sip berfungsi dengan baik") — uji timpa langsung v0.1.4→v0.1.5
+juga lulus (signature sama).
 
 | # | File | Status | Isi perubahan |
 |---|---|---|---|
