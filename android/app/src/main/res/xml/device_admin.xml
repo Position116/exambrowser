@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kebijakan admin perangkat minimal: hanya perlu kemampuan untuk
+     Lock Task Mode penuh (device owner). Tidak ada kemampuan
+     penguncian tambahan yang dipakai aplikasi. -->
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies>
+        <force-lock />
+    </uses-policies>
+</device-admin>

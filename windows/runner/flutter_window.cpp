@@ -1,8 +1,13 @@
 #include "flutter_window.h"
 
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
+#include <windows.h>
+
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "kiosk_hardening.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -36,10 +41,36 @@ bool FlutterWindow::OnCreate() {
   // window is shown. It is a no-op if the first frame hasn't completed yet.
   flutter_controller_->ForceRedraw();
 
+  // Bersihkan sisa hardening dari sesi yang crash di tengah ujian
+  // (registry yang masih terkunci) supaya Windows kembali normal.
+  kiosk_hardening::CleanupOrphans();
+
+  // Channel kiosk: lock/unlock hardening Windows (Task Manager & Win key).
+  kiosk_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+      flutter_controller_->engine()->messenger(), "exam_brow/kiosk",
+      &flutter::StandardMethodCodec::GetInstance());
+  kiosk_channel_->SetMethodCallHandler(
+      [](const flutter::MethodCall<flutter::EncodableValue>& call,
+         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name().compare("lock") == 0) {
+          kiosk_hardening::Apply();
+          result->Success(flutter::EncodableValue(true));
+        } else if (call.method_name().compare("unlock") == 0) {
+          kiosk_hardening::Revert();
+          result->Success(flutter::EncodableValue(true));
+        } else {
+          result->NotImplemented();
+        }
+      });
+
   return true;
 }
 
 void FlutterWindow::OnDestroy() {
+  // Jaminan terakhir: kalau app ditutup saat ujian (mis. di-kill dari luar),
+  // kembalikan registry ke kondisi normal.
+  kiosk_hardening::Revert();
+
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

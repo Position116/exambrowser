@@ -35,8 +35,10 @@ Komunikasi dalam **Bahasa Indonesia**.
 | `SETUP.md` | Panduan setup untuk user |
 | `EXAM_SYSTEMS.md` | Katalog sistem ujian online (ANBK/CBT/Moodle dll) + cara isi URL whitelist |
 | `windows/CMakeLists.txt` | +1 baris fix coroutine (lihat bagian 5) |
-| `android/.../MainActivity.kt` | + FLAG_SECURE (blokir screenshot/rekaman layar) + MethodChannel `exam_brow/device_info` (getTotalRamMb) + MethodChannel `exam_brow/kiosk` (start/stop: FLAG_KEEP_SCREEN_ON + startLockTask/stopLockTask) |
+| `android/.../MainActivity.kt` | + FLAG_SECURE (blokir screenshot/rekaman layar) + MethodChannel `exam_brow/device_info` (getTotalRamMb) + MethodChannel `exam_brow/kiosk` (start/stop/isDeviceOwner: KEEP_SCREEN_ON + Lock Task Mode penuh bila device owner, fallback pinning; blokir overlay via DISALLOW_CREATE_WINDOWS) |
+| `android/.../ExamAdminReceiver.kt` + `res/xml/device_admin.xml` | Device admin minimal — syarat provisioning device owner (`dpm set-device-owner`, poin 18) |
 | `tool/gen_icon.ps1` + `assets/icon/` | Generator icon (PowerShell System.Drawing) + PNG sumber icon |
+| `windows/runner/kiosk_hardening.h/.cpp` | Hardening kiosk Windows: DisableTaskMgr + NoWinKeys via registry HKCU, backup/restore + self-heal (poin 18) |
 | `windows/runner/resources/app_icon.ico` | Icon Windows (generate otomatis, JANGAN edit manual) |
 
 ### Dependencies (pubspec.yaml)
@@ -291,6 +293,47 @@ di halaman depan sudah DIHAPUS per permintaan user 25 Sep 2026)
       permanen → bisa timpa v0.1.4 tanpa uninstall), build Windows OK.
     - Catatan toolchain: apksigner di Windows = `apksigner.bat` (bukan binary
       tanpa ekstensi); panggil via `cmd //c` dgn JAVA_HOME JDK 17 di PATH.
+18. **Hardening kiosk setara Safe Exam Browser** ✅ (29 Sep 2026, v0.1.6+7):
+    - Keputusan user (via ask_user): (a) Android pakai Lock Task Mode penuh
+      via device owner dgn fallback pinning, (b) Windows kunci Task Manager
+      + tombol Win saat ujian via registry HKCU, (c) ada layar status
+      provisioning di app.
+    - ANDROID (device owner = Lock Task Mode penuh, tanpa toast unpin):
+      - File BARU `ExamAdminReceiver.kt` (DeviceAdminReceiver minimal) +
+        `res/xml/device_admin.xml` (uses-policies: force-lock) + receiver di
+        AndroidManifest (BIND_DEVICE_ADMIN) — syarat `dpm set-device-owner`.
+      - MainActivity.kt channel `exam_brow/kiosk`: method BARU `isDeviceOwner`
+        (dpm.isDeviceOwnerApp); `start` = bila device owner: setLockTaskPackages
+        + addUserRestriction(DISALLOW_CREATE_WINDOWS = blokir overlay app
+        lain) + startLockTask() (mode penuh); else fallback pinning standar
+        (perilaku lama). `stop` = clearUserRestriction + stopLockTask.
+      - Provisioning SEKALI per HP via adb (HP tanpa akun Google):
+        `adb shell dpm set-device-owner com.example.exam_brow/.ExamAdminReceiver`
+        — panduan lengkap di SETUP.md.
+    - WINDOWS (registry HKCU, tanpa admin):
+      - File BARU `kiosk_hardening.h/.cpp`: Apply() pasang DisableTaskMgr
+        (Policies\System) + NoWinKeys (Policies\Explorer) sambil BACKUP nilai
+        lama ke HKCU\Software\ExamBrow\KioskHardening; Revert() pulihkan
+        persis; CleanupOrphans() bersihkan sisa lock sesi crash (dipanggil
+        di OnCreate). OnDestroy runner juga Revert() (jaminan terakhir).
+      - flutter_window.cpp: MethodChannel `exam_brow/kiosk` (lock/unlock) di
+        sisi runner; exam_screen.dart `_enterKiosk`/`_exitKiosk` desktop
+        kini invoke lock/unlock.
+      - Keterbatasan OS: Ctrl+Alt+Del tidak bisa diblokir app manapun →
+        solusi lab resmi: Assigned Access (dicatat di SETUP.md).
+    - DART: settings_screen.dart kartu status kiosk Android (hijau "Kiosk
+      penuh aktif (device owner)" / oranye "Kiosk standar (screen pinning)"
+      + perintah adb SelectableText). Guard Platform.isAndroid — Windows/iOS
+      tidak tampil.
+    - PELAJARAN BUILD: file .cpp baru WAJIB didaftarkan di
+      `windows/runner/CMakeLists.txt` (add_executable); include
+      `<flutter/method_channel.h>` + `<flutter/standard_method_codec.h>` di
+      flutter_window.h bila pakai MethodChannel di header; `<string>` untuk
+      std::wstring. Error khas: C2059 (missing include), LNK2019 (file tidak
+      terdaftar).
+    - Verifikasi: analyze 0 issue, test lulus, build arm64 OK (versionName
+      0.1.6 / versionCode 2007, signature c4eb1aeb...2594 = keystore
+      permanen), build Windows OK setelah 3x fix di atas.
 
 ## 6. Command Cepat untuk Lanjut Kerja
 
@@ -344,6 +387,19 @@ Build Windows butuh Developer Mode ON (untuk symlink plugin) + nuget di PATH:
       ujian berjalan, layar dimatikan >5 dtk → dinyalakan → langsung di layar
       settings (logout tanpa PIN) + sesi login server ujian hangus.
       "sip berfungsi dengan baik" — fitur keamanan layar mati TUNTAS.
+- [ ] Uji manual v0.1.6 di HP TANPA provisioning (pinning standar): perilaku
+      harus sama seperti v0.1.5 — tidak ada regresi. Kartu status settings
+      tampil oranye "Kiosk standar" + perintah adb.
+- [ ] Uji provisioning device owner (butuh PC + adb + HP tanpa akun Google):
+      jalankan `adb shell dpm set-device-owner com.example.exam_brow/.ExamAdminReceiver`
+      → kartu status jadi hijau → mulai ujian → HOME/RECENTS hilang TOTAL,
+      tidak ada toast unpin, overlay app lain tidak muncul → keluar PIN →
+      kembali normal. Catat: vivo kadang menolak set-device-owner (fallback
+      pinning aman).
+- [ ] Uji hardening Windows: saat ujian, Ctrl+Shift+Esc TIDAK membuka Task
+      Manager, tombol Win tidak jalan; keluar ujian (PIN) → Task Manager &
+      Win kembali normal; kill app paksa di tengah ujian → buka app lagi →
+      registry pulih otomatis.
 - [ ] Deteksi kamera (belum dikerjakan)
 - [ ] iOS build (butuh Mac atau Codemagic; akun Apple Developer $99/th untuk distribusi)
 - [ ] Catatan keamanan (sudah di SETUP.md): kiosk ini level dasar — bukan setinggi Safe Exam Browser;
@@ -516,6 +572,8 @@ coba lagi flashdisk/port lain; alternatif: upload cloud langsung.
 | Teks/warna bar status | `lib/device_status_bar.dart` | `_resolveNetwork()` + `build()` |
 | Aturan whitelist host | `lib/exam_screen.dart` | `shouldOverrideUrlLoading` |
 | Masa tenggang logout layar mati (5 dtk) | `lib/exam_screen.dart` | konstanta `_screenOffGraceSeconds` (poin 17) |
+| Nilai yang dikunci saat ujian Windows | `windows/runner/kiosk_hardening.cpp` | konstanta `kDisableTaskMgr` / `kNoWinKeys` (poin 18) |
+| Teks kartu status kiosk Android | `lib/settings_screen.dart` | blok `if (_isDeviceOwner != null)` |
 | Blokir copy-paste (JS) | `lib/exam_screen.dart` | `_blockClipboardJs` |
 | Ambang RAM 3584 MB | `lib/main.dart` | `DeviceGate` / `_BlockedSpecScreen` |
 | Repo auto-update | `lib/update_service.dart` | `kUpdateRepo` |

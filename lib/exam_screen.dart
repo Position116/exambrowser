@@ -123,10 +123,12 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener, WidgetsBin
   }
 
   /// Mode kiosk:
-  /// - Android: screen pinning (startLockTask, home/recents tidak bisa keluar),
-  ///   layar selalu menyala (tidak sleep -> lock screen tidak muncul),
-  ///   dan immersive mode (status bar & nav bar disembunyikan).
-  /// - Desktop: fullscreen, selalu di atas, blokir tombol close.
+  /// - Android: screen pinning / Lock Task Mode penuh (device owner;
+  ///   home/recents/notifikasi hilang, overlay app lain diblokir),
+  ///   layar selalu menyala, dan immersive mode.
+  /// - Desktop: fullscreen, selalu di atas, blokir tombol close, plus
+  ///   hardening registry: Task Manager dikunci & tombol Win dimatikan
+  ///   selama ujian (dikembalikan otomatis setelahnya).
   Future<void> _enterKiosk() async {
     if (Platform.isAndroid) {
       // Layar selalu menyala selama ujian + sembunyikan status/nav bar.
@@ -144,6 +146,13 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener, WidgetsBin
     await windowManager.setFullScreen(true);
     await windowManager.setAlwaysOnTop(true);
     await windowManager.setPreventClose(true);
+    try {
+      await _kioskChannel.invokeMethod('lock');
+    } on PlatformException {
+      // Hardening gagal; kiosk tetap jalan (fail-open).
+    } on MissingPluginException {
+      // Implementasi native tidak ada (mis. hot restart).
+    }
   }
 
   Future<void> _exitKiosk() async {
@@ -162,6 +171,13 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener, WidgetsBin
     await windowManager.setPreventClose(false);
     await windowManager.setAlwaysOnTop(false);
     await windowManager.setFullScreen(false);
+    try {
+      await _kioskChannel.invokeMethod('unlock');
+    } on PlatformException {
+      // Abaikan.
+    } on MissingPluginException {
+      // Abaikan.
+    }
   }
 
   /// Dipanggil saat tombol close jendela Windows ditekan.

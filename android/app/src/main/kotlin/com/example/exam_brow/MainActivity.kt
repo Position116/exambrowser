@@ -1,6 +1,9 @@
 package com.example.exam_brow
 
 import android.app.ActivityManager
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
+import android.os.UserManager
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -38,6 +41,16 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "exam_brow/kiosk")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    // Cek apakah aplikasi adalah device owner (provisioned
+                    // via `adb shell dpm set-device-owner`). Dipakai layar
+                    // status provisioning di halaman pengaturan.
+                    "isDeviceOwner" -> {
+                        val dpm =
+                            getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                        result.success(
+                            dpm.isDeviceOwnerApp(packageName)
+                        )
+                    }
                     "start" -> {
                         // Layar tetap menyala selama ujian -> HP tidak sleep,
                         // lock screen tidak muncul di depan aplikasi.
@@ -45,14 +58,40 @@ class MainActivity : FlutterActivity() {
                             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
                             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
                         )
-                        // Screen pinning: home/recents tidak bisa memindahkan
-                        // aplikasi. (Bukan device owner, jadi Android memakai
-                        // mode pinning standar milik sistem.)
-                        startLockTask()
+                        val dpm =
+                            getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                        if (dpm.isDeviceOwnerApp(packageName)) {
+                            // Lock Task Mode PENUH (device owner): home,
+                            // recents, notifikasi, dan gesture keluar
+                            // hilang — tidak ada jalur keluar tanpa PIN.
+                            // Blokir juga overlay aplikasi lain (app
+                            // pembantu curang, tombol asis, dsb).
+                            dpm.setLockTaskPackages(
+                                ComponentName(this, ExamAdminReceiver::class.java),
+                                arrayOf(packageName)
+                            )
+                            dpm.addUserRestriction(
+                                ComponentName(this, ExamAdminReceiver::class.java),
+                                UserManager.DISALLOW_CREATE_WINDOWS
+                            )
+                            startLockTask()
+                        } else {
+                            // Belum device owner -> pinning standar
+                            // (fallback; bisa lepas via gesture sistem).
+                            startLockTask()
+                        }
                         result.success(true)
                     }
                     "stop" -> {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        val dpm =
+                            getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                        if (dpm.isDeviceOwnerApp(packageName)) {
+                            dpm.clearUserRestriction(
+                                ComponentName(this, ExamAdminReceiver::class.java),
+                                UserManager.DISALLOW_CREATE_WINDOWS
+                            )
+                        }
                         try {
                             stopLockTask()
                         } catch (e: Exception) {

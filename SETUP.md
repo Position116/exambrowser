@@ -128,13 +128,64 @@ Catatan:
   di-uninstall manual SATU KALI saat pindah ke versi keystore baru (v0.1.3+).
   Setelah itu update berikutnya bisa menimpa langsung.
 
+## Kiosk Penuh Android (Device Owner) — setara Safe Exam Browser
+
+Secara default, penguncian Android memakai **screen pinning** (mode standar):
+HOME/RECENTS terkunci selama ujian, tapi Android masih mengizinkan lepas pin
+dengan gesture bawaan (mis. tahan Back + Recents di vivo). Untuk penguncian
+**penuh** (tidak ada jalur keluar tanpa PIN, notifikasi & overlay aplikasi
+lain hilang), aplikasi harus dijadikan **device owner** — cukup dilakukan
+SEKALI per HP, via PC dengan adb.
+
+Cara tahu app sudah device owner atau belum: buka ExamBrow → kartu status di
+halaman pengaturan menampilkan "Kiosk penuh aktif (device owner)" atau
+"Kiosk standar (screen pinning)" + perintah provisioning.
+
+Langkah provisioning (sekali per HP):
+
+1. HP harus **tanpa akun Google** (Settings → Accounts → hapus semua akun).
+   Kalau pernah ada akun, biasanya perlu factory reset. Ini syarat Android,
+   bukan batasan aplikasi.
+2. Aktifkan **Developer Options** + **USB Debugging** di HP.
+3. Sambungkan HP ke PC (install driver USB HP bila perlu), cek:
+   ```
+   adb devices
+   ```
+4. PASTIKAN ExamBrow sudah ter-install, lalu jalankan:
+   ```
+   adb shell dpm set-device-owner com.example.exam_brow/.ExamAdminReceiver
+   ```
+5. Buka ExamBrow di HP → kartu status berubah jadi "Kiosk penuh aktif".
+
+Catatan:
+- Setelah jadi device owner, app TIDAK BISA di-uninstall biasa (harus lewat
+  app dulu atau `adb shell dpm remove-active-admin` + `adb uninstall`).
+- Auto-update APK tetap jalan normal (device owner boleh update sendiri).
+- Kalau provisioning gagal (HP tidak mau), app tetap jalan dengan pinning
+  standar seperti dulu — tidak ada yang rusak.
+
+## Hardening Windows Saat Ujian
+
+Saat mode ujian di Windows, aplikasi otomatis:
+- mengunci **Task Manager** (Ctrl+Shift+Esc tidak membuka apa pun),
+- mematikan **tombol Win** dan shortcut-nya (Win+D, Win+R, Win+E, dst.),
+
+via Registry HKCU (kebijakan yang sama dipakai Group Policy; tidak perlu
+admin). Setelah ujian selesai (atau app ditutup), semuanya dikembalikan
+otomatis persis seperti semula. Kalau app mati paksa di tengah ujian,
+pembersihan otomatis dijalankan saat app dibuka lagi.
+
+Yang tetap tidak bisa diblokir aplikasi manapun: **Ctrl+Alt+Del** (milik
+Windows). Untuk lab ujian resmi, disarankan tambah **Assigned Access**
+(Settings → Accounts → Other users → Set up a kiosk) dengan akun Windows
+khusus ujian — kombinasi keduanya setara praktik Safe Exam Browser.
+
 ## Catatan Penting
 
 - **Mode kiosk di Windows** = fullscreen + selalu di atas + tombol close
-  diblokir (harus PIN). Ini bukan penguncian setinggi Safe Exam Browser;
-  siswa yang paham komputer masih bisa dengan task manager dsb. Untuk ujian
-  resmi berskala besar, pertimbangkan tambahan kebijakan Windows
-  (Assigned Access) atau pembatasan akun siswa.
+  diblokir (harus PIN) + Task Manager & tombol Win dikunci saat ujian
+  (lihat bagian Hardening di atas). Sisa celah utama: Ctrl+Alt+Del —
+  tutup dengan Assigned Access untuk lab resmi.
 - **PIN keluar mode ujian** TETAP `123456` (ditentukan di `exam_screen.dart`,
   tidak bisa diubah dari aplikasi).
 - **Whitelist URL**: webview hanya mengizinkan navigasi ke host server ujian
