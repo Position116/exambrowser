@@ -96,7 +96,7 @@ static const String _antiWebviewJs = r'''
   if (!window.__originalUserAgent) {
     window.__originalUserAgent = navigator.userAgent;
   }
-  navigator.userAgent = 'Mozilla/5.0 (Linux; Android 11; SM-G998B Build/RP1A.200720.012; wg) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
+  navigator.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
   
   // Hapus properti webview lainnya
   delete window.__exambrowWebviewFlag;
@@ -290,7 +290,7 @@ static const String _antiWebviewJs = r'''
                       supportZoom: false,
                       disableContextMenu: true,
                       disableLongPressContextMenuOnLinks: true,
-                      userAgent: 'Mozilla/5.0 (Linux; Android 11; SM-G998B Build/RP1A.200720.012; wg) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+                      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
                     ),
                     // Blokir copy-paste & seleksi teks di dalam halaman ujian.
                     // (Tombol/dropdown situs tetap berfungsi; hanya seleksi & clipboard
