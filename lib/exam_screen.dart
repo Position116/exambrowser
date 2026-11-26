@@ -69,7 +69,8 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener, WidgetsBin
       }, true);
     });
 })();
-''';\n
+''';
+
 static const String _antiWebviewJs = r'''
 (function() {
   if (window.__exambrowAntiWebview) return;
@@ -92,11 +93,9 @@ static const String _antiWebviewJs = r'''
     configurable: true
   });
   
-  // Override user agent untuk sesuai dengan yang kita set di settings
-  if (!window.__originalUserAgent) {
-    window.__originalUserAgent = navigator.userAgent;
-  }
-  navigator.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+  // User agent TIDAK di-override dari JS: server imtihan.id hanya menerima
+  // UA bawaan WebView Android (mengandung "; wv)"), persis seperti aplikasi
+  // resmi SIMS (com.cbt.sims) yang tidak menyetel user agent sama sekali.
   
   // Hapus properti webview lainnya
   delete window.__exambrowWebviewFlag;
@@ -290,7 +289,9 @@ static const String _antiWebviewJs = r'''
                       supportZoom: false,
                       disableContextMenu: true,
                       disableLongPressContextMenuOnLinks: true,
-                      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                      // userAgent sengaja TIDAK diset: pakai UA bawaan WebView
+                      // Android ("...; wv) ..."), sama seperti aplikasi resmi
+                      // SIMS yang diterima server imtihan.id.
                     ),
                     // Blokir copy-paste & seleksi teks di dalam halaman ujian.
                     // (Tombol/dropdown situs tetap berfungsi; hanya seleksi & clipboard
