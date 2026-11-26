@@ -86,16 +86,15 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener, WidgetsBin
     super.dispose();
   }
 
-  /// Keamanan ujian: layar HP dimatikan saat mode ujian -> sesi hangus,
-  /// aplikasi keluar paksa ke halaman login (settings) tanpa PIN.
-  /// Diimplementasi via lifecycle: layar Android mati -> state `paused`;
-  /// saat `resumed`, jika durasi di luar foreground melewati masa tenggang,
-  /// sesi diakhiri. Desktop tidak pernah `paused` oleh layar mati sehingga
-  /// Windows otomatis tidak terpengaruh.
+  /// Lifecycle iOS juga dipantau. iOS tidak memberi API untuk mengetahui
+  /// secara pasti apakah layar dimatikan atau app hanya masuk background,
+  /// sehingga semua perpindahan background lebih dari grace period dianggap
+  /// meninggalkan sesi ujian.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!Platform.isAndroid) return;
-    if (state == AppLifecycleState.paused) {
+    if (!Platform.isAndroid && !Platform.isIOS) return;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _leftForegroundAt ??= DateTime.now();
       return;
     }
@@ -257,6 +256,7 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener, WidgetsBin
                       supportZoom: false,
                       disableContextMenu: true,
                       disableLongPressContextMenuOnLinks: true,
+                      userAgent: 'Mozilla/5.0 (Linux; Android 11; SM-G998B Build/RP1A.200720.012; wg) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
                     ),
                     // Blokir copy-paste & seleksi teks di dalam halaman ujian.
                     // (Tombol/dropdown situs tetap berfungsi; hanya seleksi & clipboard
