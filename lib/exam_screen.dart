@@ -69,6 +69,40 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener, WidgetsBin
       }, true);
     });
 })();
+''';\n
+static const String _antiWebviewJs = r'''
+(function() {
+  if (window.__exambrowAntiWebview) return;
+  window.__exambrowAntiWebview = true;
+  
+  // Sembunyikan window.chrome (webview kadang memiliki properti ini)
+  if (window.chrome) {
+    window.chrome = { ...window.chrome, app: { ...(window.chrome?.app || {}), isInstalled: false } };
+  }
+  
+  // Sembunyikan navigator.plugins
+  Object.defineProperty(navigator, 'plugins', {
+    get: function() { return []; },
+    configurable: true
+  });
+  
+  // Sembunyikan navigator.hardwareConcurrency
+  Object.defineProperty(navigator, 'hardwareConcurrency', {
+    get: function() { return 4; },
+    configurable: true
+  });
+  
+  // Override user agent untuk sesuai dengan yang kita set di settings
+  if (!window.__originalUserAgent) {
+    window.__originalUserAgent = navigator.userAgent;
+  }
+  navigator.userAgent = 'Mozilla/5.0 (Linux; Android 11; SM-G998B Build/RP1A.200720.012; wg) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
+  
+  // Hapus properti webview lainnya
+  delete window.__exambrowWebviewFlag;
+  
+  console.log('ExamBrow: Anti-webview fingerprint aktif');
+})();
 ''';
 
   @override
@@ -264,6 +298,11 @@ class _ExamScreenState extends State<ExamScreen> with WindowListener, WidgetsBin
                     onLoadStop: (controller, url) async {
                       await controller.evaluateJavascript(
                         source: _blockClipboardJs,
+                      );
+                      // Inject script anti-webview fingerprint untuk menyembunyikan
+                      // properti yang mendeteksi InAppWebView
+                      await controller.evaluateJavascript(
+                        source: _antiWebviewJs,
                       );
                     },
                     // Whitelist: hanya host server ujian yang boleh dibuka.
